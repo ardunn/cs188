@@ -5,4 +5,7 @@ Magnetic Resonance Imaging is one of the most popular medical technologies for p
 Stay tuned for more details!
 
 ## Updates
-* [04/14/17: Meeting Dr. Nelly tan](041417)
+* [04/14/17: Meeting Dr. Nelly Tan](041417)
+
+## Resources
+_To be updated_
