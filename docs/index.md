@@ -7,10 +7,12 @@ Stay tuned for more details!
 ## Updates
 * [04/14/17: Meeting Dr. Nelly Tan](041417)
 
-* [4/21/17: Meeting with Dr. Fabien Scalzo](042117)
+* [04/21/17: Meeting with Dr. Fabien Scalzo](042117)
+
+* [04/28/17: Literature review](https://github.com/ardunn/cs188/blob/master/docs/literature_review/Alex%20Dunn%20and%20Breanna%20Nery%20-%20Literature%20Review.pdf)
 
 ## Resources
-* [Detection of Prostate Cancer based on Multi-parametric Regional MRI Features](http://c.ymcdn.com/sites/siim.org/resource/resmgr/siim2016/presentation/SIIM16_Viewing-Tan.pdf): This is the SIIM 2016 presentation by Dr. Nelly Tan and Fabien Scalzo on detecting prostate cancer via machine learning
+* [Detection of Prostate Cancer based on Multi-parametric Regional MRI Features](http://c.ymcdn.com/sites/siim.org/resource/resmgr/siim2016/presentation/SIIM16_Viewing-Tan.pdf): This is the SIIM 2016 presentation by Dr. Nelly Tan and Fabien Scalzo on detecting prostate cancer via machine learning. The paper for the presentation can be found [here](https://c.ymcdn.com/sites/siim.org/resource/resmgr/siim2016abstracts/Image_Tan.pdf)
 
 * [Kernel-based Learning for Multiparametric Magnetic Resonance Imaging](http://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=6690197&tag=1): Applying support vector machines (SVM) in probabalistic form (P-SVM) for classification of prostate cancers. 
 
