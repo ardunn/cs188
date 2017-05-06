@@ -11,6 +11,9 @@ Stay tuned for more details!
 
 * [04/28/17: Literature review](literature_review)
 
+* [05/05/17: Receiving The Data](050517)
+
+
 ## Resources
 * [Detection of Prostate Cancer based on Multi-parametric Regional MRI Features](http://c.ymcdn.com/sites/siim.org/resource/resmgr/siim2016/presentation/SIIM16_Viewing-Tan.pdf): This is the SIIM 2016 presentation by Dr. Nelly Tan and Fabien Scalzo on detecting prostate cancer via machine learning. The paper for the presentation can be found [here](https://c.ymcdn.com/sites/siim.org/resource/resmgr/siim2016abstracts/Image_Tan.pdf)
 
