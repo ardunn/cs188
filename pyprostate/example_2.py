@@ -1,17 +1,31 @@
 import scipy.io
 import numpy as np
+import sys
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import roc_auc_score
 
 data = scipy.io.loadmat('data.mat')['data'][0]
 
-patient = data[0]
-mask = patient[0]
-t2 = patient[1]
+#patient = data[0]
+#mask = patient[0]
+#t2 = patient[1]
 
+# Testing Data
 patient2 = data[-1]
 mask2 = patient2[0]
 t2_2 = patient2[1]
+
+# Command-line arguments 
+if len(sys.argv) < 2:
+    print "Usage: example_2.py <n> <yes/true/t/y/1 or no/false/f/n/0>"
+    sys.exit()
+
+n = int(sys.argv[1])
+
+if sys.argv[2].lower() in ('yes', 'true', 't', 'y', '1'): 
+    prune = True
+if sys.argv[2].lower() in ('no', 'false', 'f', 'n', '0'):
+    prune = False
 
 def create_dataset(image, mask, n, prune=False):
 
