@@ -6,33 +6,41 @@ from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import normalize
 
 data = scipy.io.loadmat('data.mat')['data'][0]
+bad_patients = [16, 23, 27, 31, 34, 39, 4, 43, 46, 54, 55, 57, 59, 6, 7, 8, 9]
 
-#patient = data[0]
-#mask = patient[0]
-#t2 = patient[1]
-
-# Testing Data
-patient2 = data[-1]
-mask2 = patient2[0]
-t2_2 = patient2[1]
 
 # Command-line arguments 
 if len(sys.argv) < 2:
     print "Usage: example_2.py <n> <yes/true/t/y/1 or no/false/f/n/0>"
     sys.exit()
 
+
+# prune option
+prune = True
+axis = 0
+
 n = int(sys.argv[1])
 
-prune = True
-# prune option
 if sys.argv[2].lower() in ('yes', 'true', 't', 'y', '1'):
     prune = True
 if sys.argv[2].lower() in ('no', 'false', 'f', 'n', '0'):
     prune = False
-if sys.argv[3].lower() in ('features', 'feats', 'feature'):
-    axis = 0
-elif sys.argv[3].lower() in ('samples', 'samps', 'feature'):
-    axis = 1
+
+def normalize_t2(data):
+
+    flat_data = []
+
+    for i, patient in enumerate(data):
+        if i not in bad_patients:
+            t2 = patient[1]
+            flat_data.append(t2.flatten())
+
+    normalized_flat_data = normalize(flat_data)
+    normalized_data = [np.reshape(datum, (256, 256)) for datum in normalized_flat_data]
+    return normalized_data
+
+def get_masks(data):
+    return [patient[0] for i, patient in enumerate(data) if i not in bad_patients]
 
 
 def create_dataset(image, mask, n, prune=False):
@@ -63,37 +71,42 @@ def create_dataset(image, mask, n, prune=False):
 
     return X, y
 
+if __name__ == "__main__":
 
-print "making training data"
-X_train = []
-y_train = []
 
-for i, image in enumerate(data[:-1]):
-    if i not in [16, 23, 27, 31, 34, 39, 4, 43, 46, 54, 55, 57, 59, 6, 7, 8, 9]:
-        mask_single = image[0]
-        t2_single = image[1]
-        X_train_single, y_train_single = create_dataset(t2_single, mask_single, n, prune=prune)
+    print "making training data"
+    masks = get_masks(data)
+    t2 = normalize_t2(data)
+    n_patients = len(masks)-1
+
+
+    X_train = []
+    y_train = []
+
+    for i in range(n_patients):
+        X_train_single, y_train_single = create_dataset(t2[i], masks[i], n, prune=prune)
         X_train += X_train_single
         y_train += y_train_single
 
-# axis=1 default means normalizing samples
-# axis=0 means normalizing features
-X_train = normalize(X_train, axis=axis)
 
-print "making testing data"
-X_test, y_test = create_dataset(t2_2, mask2, n, prune = prune)
+    print "making testing data"
 
-#Normalize test data
-X_test = normalize(X_test, axis=axis)
 
-print "training"
-classifier = RandomForestClassifier()
-classifier.fit(X_train, y_train)
+    test_mask = masks[-1]
+    test_t2 = t2[-1]
+    X_test, y_test = create_dataset(test_t2, test_mask, n, prune = prune)
 
-print "predicting"
-y_pred = classifier.predict(X_test)
+    #Normalize test data
+    X_test = normalize(X_test, axis=axis)
 
-score = roc_auc_score(y_true=y_test, y_score=y_pred)
-print "score", score
+    print "training"
+    classifier = RandomForestClassifier()
+    classifier.fit(X_train, y_train)
+
+    print "predicting"
+    y_pred = classifier.predict(X_test)
+
+    score = roc_auc_score(y_true=y_test, y_score=y_pred)
+    print "score", score
 
 
