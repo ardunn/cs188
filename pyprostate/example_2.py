@@ -3,6 +3,7 @@ import numpy as np
 import sys
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import roc_auc_score
+from sklearn.preprocessing import normalize
 
 data = scipy.io.loadmat('data.mat')['data'][0]
 
@@ -22,10 +23,17 @@ if len(sys.argv) < 2:
 
 n = int(sys.argv[1])
 
-if sys.argv[2].lower() in ('yes', 'true', 't', 'y', '1'): 
+prune = True
+# prune option
+if sys.argv[2].lower() in ('yes', 'true', 't', 'y', '1'):
     prune = True
 if sys.argv[2].lower() in ('no', 'false', 'f', 'n', '0'):
     prune = False
+if sys.argv[3].lower() in ('features', 'feats'):
+    axis = 0
+elif sys.argv[3].lower() in ('samples', 'samps'):
+    axis = 1
+
 
 def create_dataset(image, mask, n, prune=False):
 
@@ -52,6 +60,7 @@ def create_dataset(image, mask, n, prune=False):
                     y.append(yi)
 
     X = [image.flatten() for image in subimages]
+
     return X, y
 
 
@@ -59,15 +68,17 @@ print "making training data"
 X_train = []
 y_train = []
 
-index = 0; 
-for image in data[0:-1]:
-    if index not in [16, 23, 27, 31, 34, 39, 4, 43, 46, 54, 55, 57, 59, 6, 7, 8, 9]:
+for i, image in enumerate(data[:-1]):
+    if i not in [16, 23, 27, 31, 34, 39, 4, 43, 46, 54, 55, 57, 59, 6, 7, 8, 9]:
         mask_single = image[0]
         t2_single = image[1]
         X_train_single, y_train_single = create_dataset(t2_single, mask_single, n, prune=prune)
         X_train += X_train_single
         y_train += y_train_single
-    index += 1
+
+# axis=1 default means normalizing samples
+# axis=0 means normalizing features
+X_train = normalize(X_train, axis=axis)
 
 print "making testing data"
 X_test, y_test = create_dataset(t2_2, mask2, n, prune = prune)
