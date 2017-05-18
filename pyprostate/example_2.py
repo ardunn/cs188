@@ -20,7 +20,6 @@ def create_dataset(image, mask, n, prune=False):
     for i in range(n, 255-n):
         for j in range(n, 255-n):
             if mask[i,j] != 0:
-                `
                 # numpy submatrices have (first index starting at 0):(last index starting from 1)
 
                 store = True
