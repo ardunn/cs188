@@ -29,9 +29,9 @@ if sys.argv[2].lower() in ('yes', 'true', 't', 'y', '1'):
     prune = True
 if sys.argv[2].lower() in ('no', 'false', 'f', 'n', '0'):
     prune = False
-if sys.argv[3].lower() in ('features', 'feats'):
+if sys.argv[3].lower() in ('features', 'feats', 'feature'):
     axis = 0
-elif sys.argv[3].lower() in ('samples', 'samps'):
+elif sys.argv[3].lower() in ('samples', 'samps', 'feature'):
     axis = 1
 
 
@@ -82,6 +82,9 @@ X_train = normalize(X_train, axis=axis)
 
 print "making testing data"
 X_test, y_test = create_dataset(t2_2, mask2, n, prune = prune)
+
+#Normalize test data
+X_test = normalize(X_test, axis=axis)
 
 print "training"
 classifier = RandomForestClassifier()
