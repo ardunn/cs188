@@ -1,17 +1,31 @@
 import scipy.io
 import numpy as np
+import sys
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import roc_auc_score
 
 data = scipy.io.loadmat('data.mat')['data'][0]
 
-patient = data[0]
-mask = patient[0]
-t2 = patient[1]
+#patient = data[0]
+#mask = patient[0]
+#t2 = patient[1]
 
+# Testing Data
 patient2 = data[-1]
 mask2 = patient2[0]
 t2_2 = patient2[1]
+
+# Command-line arguments 
+if len(sys.argv) < 2:
+    print "Usage: example_2.py <n> <yes/true/t/y/1 or no/false/f/n/0>"
+    sys.exit()
+
+n = int(sys.argv[1])
+
+if sys.argv[2].lower() in ('yes', 'true', 't', 'y', '1'): 
+    prune = True
+if sys.argv[2].lower() in ('no', 'false', 'f', 'n', '0'):
+    prune = False
 
 def create_dataset(image, mask, n, prune=False):
 
@@ -20,6 +34,7 @@ def create_dataset(image, mask, n, prune=False):
     for i in range(n, 255-n):
         for j in range(n, 255-n):
             if mask[i,j] != 0:
+                
                 # numpy submatrices have (first index starting at 0):(last index starting from 1)
 
                 store = True
@@ -44,15 +59,18 @@ print "making training data"
 X_train = []
 y_train = []
 
+index = 0; 
 for image in data[0:-1]:
-    mask_single = image[0]
-    t2_single = image[1]
-    X_train_single, y_train_single = create_dataset(t2_single, mask_single, 3, prune=True)
-    X_train += X_train_single
-    y_train += y_train_single
+    if index not in [16, 23, 27, 31, 34, 39, 4, 43, 46, 54, 55, 57, 59, 6, 7, 8, 9]:
+        mask_single = image[0]
+        t2_single = image[1]
+        X_train_single, y_train_single = create_dataset(t2_single, mask_single, n, prune=prune)
+        X_train += X_train_single
+        y_train += y_train_single
+    index += 1
 
 print "making testing data"
-X_test, y_test = create_dataset(t2_2, mask2, 3, prune = True)
+X_test, y_test = create_dataset(t2_2, mask2, n, prune = prune)
 
 print "training"
 classifier = RandomForestClassifier()
