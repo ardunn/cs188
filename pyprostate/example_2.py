@@ -4,6 +4,9 @@ import sys
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import normalize
+from skimage.filters import gabor
+from skimage import data, io
+from matplotlib import pyplot as plt
 
 data = scipy.io.loadmat('data.mat')['data'][0]
 bad_patients = [16, 23, 27, 31, 34, 39, 4, 43, 46, 54, 55, 57, 59, 6, 7, 8, 9]
@@ -38,6 +41,14 @@ def normalize_t2(data):
     normalized_flat_data = normalize(flat_data)
     normalized_data = [np.reshape(datum, (256, 256)) for datum in normalized_flat_data]
     return normalized_data
+
+def get_t2(data):
+    t2_data = []
+    for i, patient in enumerate(data):
+        if i not in bad_patients:
+            t2 = patient[1]
+            t2_data.append(t2)
+    return t2_data
 
 def get_masks(data):
     return [patient[0] for i, patient in enumerate(data) if i not in bad_patients]
