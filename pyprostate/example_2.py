@@ -22,6 +22,8 @@ if len(sys.argv) < 2:
 prune = True
 axis = 0
 
+first_image = False 
+
 n = int(sys.argv[1])
 
 if sys.argv[2].lower() in ('yes', 'true', 't', 'y', '1'):
@@ -55,13 +57,12 @@ def get_masks(data):
 
 
 def create_dataset(image, mask, n, prune=False):
-
+    row = 1
     subimages = []
     y = []
     for i in range(n, 255-n):
         for j in range(n, 255-n):
-            if mask[i,j] != 0:
-                
+            if mask[i,j]!=0:
                 # numpy submatrices have (first index starting at 0):(last index starting from 1)
 
                 store = True
@@ -72,11 +73,16 @@ def create_dataset(image, mask, n, prune=False):
                             break
 
                 if store:
+                    subimage = image[i-n:i+n+1, j-n:j+n+1]
+                    if i == 105 and j == 105 and first_image:
+                        print "saving subimage at (105,105)"
+                        np.savetxt('subimage_105-105.csv', subimage, delimiter=',')
+                        print row
                     subimages.append(image[i-n:i+n+1, j-n:j+n+1])
-
                     # translate (2 -> 1) and 1 -> 0
                     yi = 1 if int(round(mask[i,j]))==2 else 0
                     y.append(yi)
+                    row += 1
 
     X = [image.flatten() for image in subimages]
 
@@ -91,6 +97,11 @@ if __name__ == "__main__":
     # t2 = get_t2(data)
     n_patients = len(masks)-1
 
+    print "saving patient 0 normalized data array"
+    np.savetxt('normalized_array.csv', t2_normalized[0], delimiter=',')
+
+    print "saving patient 0 mask data array"
+    np.savetxt('mask_array.csv', masks [0], delimiter=',')
 
     # Applies gabor filter at different frequencies on patient 0
     # print "filtering images"
@@ -101,7 +112,6 @@ if __name__ == "__main__":
 
     # for frequency, ax in zip(frequencies, axes[0:]):
     #     filt_real, filt_imag = gabor(test_image, frequency=frequency)
-    #     #plt.figure()
     #     image_name = 'patient{}_{}'.format(0, frequency)
     #     ax.imshow(filt_real)
     #     ax.axis('off')
@@ -115,20 +125,21 @@ if __name__ == "__main__":
     y_train = []
 
     for i in range(n_patients):
-        X_train_single, y_train_single = create_dataset(t2[i], masks[i], n, prune=prune)
+        first_image = True if i==0 else False
+        X_train_single, y_train_single = create_dataset(t2_normalized[i], masks[i], n, prune=prune)
         X_train += X_train_single
         y_train += y_train_single
-
+        if i == 0: 
+            print "Saving y training array"
+            np.savetxt('training_y_array.csv', y_train_single, delimiter=',')
+            print "Saving X training array"
+            np.savetxt('training_X_array.csv', X_train_single, delimiter=',')
 
     print "making testing data"
 
-
     test_mask = masks[-1]
-    test_t2 = t2[-1]
+    test_t2 = t2_normalized[-1]
     X_test, y_test = create_dataset(test_t2, test_mask, n, prune = prune)
-
-    #Normalize test data
-    X_test = normalize(X_test, axis=axis)
 
     print "training"
     classifier = RandomForestClassifier()
@@ -138,6 +149,10 @@ if __name__ == "__main__":
     y_pred = classifier.predict(X_test)
 
     score = roc_auc_score(y_true=y_test, y_score=y_pred)
+    print "Saving y test"
+    np.savetxt('y_test_array.csv', y_test, delimiter=',')
+    print "Saving y pred"
+    np.savetxt('y_pred_array.csv', y_pred, delimiter=',')
     print "score", score
 
 
