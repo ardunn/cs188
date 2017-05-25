@@ -73,13 +73,33 @@ def create_dataset(image, mask, n, prune=False):
 
 if __name__ == "__main__":
 
-
     print "making training data"
     masks = get_masks(data)
-    t2 = normalize_t2(data)
+    t2_normalized = normalize_t2(data)
+    # Uncomment for non-normalized t2
+    # t2 = get_t2(data)
     n_patients = len(masks)-1
 
 
+    # Applies gabor filter at different frequencies on patient 0
+    # print "filtering images"
+    # frequencies = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    # test_image = t2_normalized[0]
+
+    # fig, axes = plt.subplots(nrows=1, ncols=9, figsize=(10,3))
+
+    # for frequency, ax in zip(frequencies, axes[0:]):
+    #     filt_real, filt_imag = gabor(test_image, frequency=frequency)
+    #     #plt.figure()
+    #     image_name = 'patient{}_{}'.format(0, frequency)
+    #     ax.imshow(filt_real)
+    #     ax.axis('off')
+    #     ax.set_title(frequency, fontsize=12)
+    #     #plt.savefig('{}.png'.format(image_name))
+    #     #plt.close()
+    
+    # plt.show()
+    
     X_train = []
     y_train = []
 
