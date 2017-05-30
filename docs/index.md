@@ -12,6 +12,7 @@ Stay tuned for more details!
 * [04/28/17: Literature review](literature_review)
 
 * [05/05/17: Receiving The Data](050517)
+* [05/11/17: Attempt #1](051117)
 
 
 ## Resources
