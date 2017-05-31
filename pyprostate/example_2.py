@@ -8,6 +8,7 @@ from sklearn.preprocessing import normalize
 from skimage.filters import gabor
 from skimage import data, io
 from matplotlib import pyplot as plt
+from sklearn.model_selection import LeaveOneOut
 
 data = scipy.io.loadmat('data.mat')['data'][0]
 bad_patients = [16, 23, 27, 31, 34, 39, 4, 43, 46, 54, 55, 57, 59, 6, 7, 8, 9]
@@ -112,18 +113,16 @@ def create_multiparametric_dataset(image_set, mask, n, prune=False):
 
     return X_new, y
 
-
-def runmodel(model, n_runs, frequency=0.4, quiet=False, silent=False, normalized=False, filtered=False):
+def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, normalized=False, filtered=False):
     """
     Runs a single classifier through sample classifications.
     """
 
-    #todo: run cross validation instead of just the last testing sample
-
     modelname = model.__class__.__name__
 
     if not quiet:
-        print "making training data"
+        print "{model}: patient {patient}: making training data".format(model=modelname, patient=patient_index)
+        
     masks = get_masks(data)
 
     t2_filtered = get_filtered_t2(data, frequency=frequency)
@@ -133,17 +132,22 @@ def runmodel(model, n_runs, frequency=0.4, quiet=False, silent=False, normalized
     else:
         t2 = get_t2(data)
 
-    n_patients = len(masks) - 1
+    n_patients = len(masks)
+
+    if patient_index == -1:
+        patient_index = n_patients - 1
 
     X_train = []
     y_train = []
-    scores = []
 
-    for run in range(n_runs):
+    # Create training data
 
-        # Create training data
+    for i in range(n_patients):
 
-        for i in range(n_patients):
+        if i == patient_index:
+            continue
+
+        else:
 
             if filtered:
                 image_set = [t2[i], t2_filtered[i]]
@@ -154,49 +158,61 @@ def runmodel(model, n_runs, frequency=0.4, quiet=False, silent=False, normalized
             X_train += X_train_single
             y_train += y_train_single
 
+    # Create testing data
 
-        # Create testing data
+    if not quiet:
+        print "{model}: patient {patient}: making testing data".format(model=modelname, patient=patient_index)
 
-        if not quiet:
-            print "{model}: {run} making testing data".format(model=modelname, run=run+1)
-
-        test_mask = masks[-1]
-        test_t2 = t2[-1]
-        test_t2_filtered = t2_filtered[-1]
-        if filtered:
-            image_set = [test_t2, test_t2_filtered]
-            X_test, y_test = create_multiparametric_dataset(image_set, test_mask, n, prune = prune)
-        else:
-            X_test, y_test = create_dataset(test_t2, test_mask, n, prune=prune)
+    test_mask = masks[patient_index]
+    test_t2 = t2[patient_index]
+    test_t2_filtered = t2_filtered[patient_index]
+    if filtered:
+        image_set = [test_t2, test_t2_filtered]
+        X_test, y_test = create_multiparametric_dataset(image_set, test_mask, n, prune = prune)
+    else:
+        X_test, y_test = create_dataset(test_t2, test_mask, n, prune=prune)
 
 
-        # Train, predict, and score
+    # Train, predict, and score
 
-        if not quiet:
-            print "{model}: {run} training".format(model=modelname, run=run+1)
-        model.fit(X_train, y_train)
+    if not quiet:
+        print "{model}: patient {patient}: training".format(model=modelname, patient=patient_index)
+    model.fit(X_train, y_train)
 
-        if not quiet:
-            print "{model}: {run} testing".format(model=modelname, run=run+1)
-        y_pred = model.predict(X_test)
+    if not quiet:
+        print "{model}: patient {patient}: testing".format(model=modelname, patient=patient_index)
+    y_pred = model.predict(X_test)
 
-        score = roc_auc_score(y_true=y_test, y_score=y_pred)
+    score = roc_auc_score(y_true=y_test, y_score=y_pred)
 
-        if not silent:
-            print "{model}: {run} score {score}".format(model=modelname, run=run+1, score=score)
+    if not silent:
+        print "{model}: patient {patient}: score {score}".format(model=modelname, score=score, patient=patient_index)
 
-        scores.append(score)
+    return score
 
-    avg_score = np.mean(scores)
-    print "{} achieved an average score of {} in {} runs".format(modelname, avg_score, n_runs)
-    return avg_score
+def crossvalidate(*args, **kwargs):
+
+    scores = []
+    j = 0
+    for i, _ in enumerate(data):
+        if i not in bad_patients:
+
+            kwargs['patient_index'] = j
+            score = runmodel(*args, **kwargs)
+            scores.append(score)
+            j += 1
+
+    print "Overall cross validated score", np.mean(scores)
+    return np.mean(scores)
 
 
 
 if __name__ == "__main__":
 
     model = RandomForestClassifier(n_estimators=10)
-    runmodel(model, 5, filtered=True, frequency=0.4)
+    # runmodel(model, filtered=True, frequency=0.4)
+    # runmodel(model)
+    crossvalidate(model, frequency=0.5)
 
 
     # For making sure our data is being constructed correctly
