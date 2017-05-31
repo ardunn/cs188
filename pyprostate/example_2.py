@@ -56,10 +56,20 @@ def get_t2(data):
             t2_data.append(t2)
     return t2_data
 
+def get_filtered_t2(data): 
+    filtered_data = []
+    for i, patient in enumerate(data):
+        if i not in bad_patients:
+            t2 = patient[1]
+            filt_real, filt_t2 = gabor(t2, frequency=0.3)
+            filtered_data.append(filt_t2)
+    return filtered_data
+
 def get_masks(data):
     return [patient[0] for i, patient in enumerate(data) if i not in bad_patients]
 
-def create_dataset(image, mask, n, prune=False):
+
+def create_dataset(image, mask, filtered_image, n, prune=False):
     row = 1
     subimages = []
     y = []
@@ -81,7 +91,7 @@ def create_dataset(image, mask, n, prune=False):
                         print "saving subimage at (105,105)"
                         np.savetxt('subimage_105-105.csv', subimage, delimiter=',')
                         print row
-                    subimages.append(image[i-n:i+n+1, j-n:j+n+1])
+                    subimages.append(image[i-n:i+n+1, j-n:j+n+1] + filtered_image[i-n:i+n+1, j-n:j+n+1])
                     # translate (2 -> 1) and 1 -> 0
                     yi = 1 if int(round(mask[i,j]))==2 else 0
                     y.append(yi)
@@ -96,6 +106,7 @@ if __name__ == "__main__":
     print "making training data"
     masks = get_masks(data)
     # t2_normalized = normalize_t2(data)
+    t2_filtered = get_filtered_t2(data)
     # Uncomment for non-normalized t2
     t2 = get_t2(data)
     n_patients = len(masks)-1
@@ -127,37 +138,48 @@ if __name__ == "__main__":
     X_train = []
     y_train = []
 
-    for i in range(n_patients):
-        first_image = True if i==0 else False
-        X_train_single, y_train_single = create_dataset(t2[i], masks[i], n, prune=prune)
-        X_train += X_train_single
-        y_train += y_train_single
-        if i == 0: 
-            print "Saving y training array"
-            np.savetxt('training_y_array.csv', y_train_single, delimiter=',')
-            print "Saving X training array"
-            np.savetxt('training_X_array.csv', X_train_single, delimiter=',')
+    n_runs = 10
+    scores = []
 
-    print "making testing data"
+    for run in range(n_runs):
+        for i in range(n_patients):
+            first_image = True if i==0 else False
 
-    test_mask = masks[-1]
-    test_t2 = t2[-1]
-    X_test, y_test = create_dataset(test_t2, test_mask, n, prune = prune)
+            X_train_single, y_train_single = create_dataset(t2[i], masks[i], t2_filtered[i], n, prune=prune)
+            X_train += X_train_single
+            y_train += y_train_single
+            if i == 0: 
+                print "Saving y training array"
+                np.savetxt('training_y_array.csv', y_train_single, delimiter=',')
+                print "Saving X training array"
+                np.savetxt('training_X_array.csv', X_train_single, delimiter=',')
 
-    print "training"
-    classifier = RandomForestClassifier(n_estimators=2)
-    # classifier = MLPClassifier()
-    classifier.fit(X_train, y_train)
+        print "making testing data", run
+
+        test_mask = masks[-1]
+        test_t2 = t2[-1]
+        test_t2_filtered = t2_filtered[-1]
+        X_test, y_test = create_dataset(test_t2, test_mask, test_t2_filtered, n, prune = prune)
+
+        print "training", run
+        classifier = RandomForestClassifier(n_estimators=2)
+        # classifier = MLPClassifier()
+        classifier.fit(X_train, y_train)
 
 
-    print "predicting"
-    y_pred = classifier.predict(X_test)
+        print "predicting", run
+        y_pred = classifier.predict(X_test)
 
-    score = roc_auc_score(y_true=y_test, y_score=y_pred)
-    print "Saving y test"
-    np.savetxt('y_test_array.csv', y_test, delimiter=',')
-    print "Saving y pred"
-    np.savetxt('y_pred_array.csv', y_pred, delimiter=',')
-    print "score", score
+        score = roc_auc_score(y_true=y_test, y_score=y_pred)
+        print "Saving y test"
+        np.savetxt('y_test_array.csv', y_test, delimiter=',')
+        print "Saving y pred"
+        np.savetxt('y_pred_array.csv', y_pred, delimiter=',')
+        print "score", score
+
+        scores.append(score)
+
+
+    print np.mean(scores)
 
 

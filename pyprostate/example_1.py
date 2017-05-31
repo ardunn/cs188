@@ -60,15 +60,15 @@ def example_run(n, data):
     image_pred = np.reshape(y_pred, (256/n, 256/n))
     image_true = np.reshape(y_test, (256/n, 256/n))
 
-    plt.figure(n)
-    plt.imshow(image_pred, interpolation='nearest')
-    plt.savefig('{}_predicted.png'.format(n))
-    plt.close()
+    # plt.figure(n)
+    # plt.imshow(image_pred, interpolation='nearest')
+    # plt.savefig('{}_predicted.png'.format(n))
+    # plt.close()
 
-    plt.figure(n+1)
-    plt.imshow(image_true, interpolation='nearest')
-    plt.savefig('{}_true.png'.format(n))
-    plt.close()
+    # plt.figure(n+1)
+    # plt.imshow(image_true, interpolation='nearest')
+    # plt.savefig('{}_true.png'.format(n))
+    # plt.close()
 
     return score
 
