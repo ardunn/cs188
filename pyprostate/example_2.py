@@ -67,8 +67,7 @@ def get_filtered_t2(data, frequency):
 def get_masks(data):
     return [patient[0] for i, patient in enumerate(data) if i not in bad_patients]
 
-
-def create_dataset(image, mask, filtered_image, n, prune=False):
+def create_dataset(image, mask, n, prune=False):
     row = 1
     subimages = []
     y = []
@@ -86,11 +85,7 @@ def create_dataset(image, mask, filtered_image, n, prune=False):
 
                 if store:
                     subimage = image[i-n:i+n+1, j-n:j+n+1]
-                    if i == 105 and j == 105 and first_image:
-                        print "saving subimage at (105,105)"
-                        np.savetxt('subimage_105-105.csv', subimage, delimiter=',')
-                        print row
-                    subimages.append(image[i-n:i+n+1, j-n:j+n+1] + filtered_image[i-n:i+n+1, j-n:j+n+1])
+                    subimages.append(image[i-n:i+n+1, j-n:j+n+1])
                     # translate (2 -> 1) and 1 -> 0
                     yi = 1 if int(round(mask[i,j]))==2 else 0
                     y.append(yi)
@@ -100,11 +95,30 @@ def create_dataset(image, mask, filtered_image, n, prune=False):
 
     return X, y
 
+def create_multiparametric_dataset(image_set, mask, n, prune=False):
+    X_tot = []
+    _, y = create_dataset(image_set[0], mask, n, prune=prune)
 
-def runmodel(model, n_runs, frequency=0.3, quiet=False, silent=False, normalized=False, filtered=False):
+    for image in image_set:
+        X, y = create_dataset(image, mask, n, prune=prune)
+        X_tot.append(X)
+
+    X_new = []
+    for i,_ in enumerate(X_tot[0]):
+        Xi_new = []
+        for j, _ in enumerate(X_tot):
+            Xi_new += X_tot[j][i].tolist()
+        X_new.append(Xi_new)
+
+    return X_new, y
+
+
+def runmodel(model, n_runs, frequency=0.4, quiet=False, silent=False, normalized=False, filtered=False):
     """
     Runs a single classifier through sample classifications.
     """
+
+    #todo: run cross validation instead of just the last testing sample
 
     modelname = model.__class__.__name__
 
@@ -112,9 +126,9 @@ def runmodel(model, n_runs, frequency=0.3, quiet=False, silent=False, normalized
         print "making training data"
     masks = get_masks(data)
 
-    if filtered:
-        t2 = get_filtered_t2(data, frequency=frequency)
-    elif normalized:
+    t2_filtered = get_filtered_t2(data, frequency=frequency)
+
+    if normalized:
         t2 = normalize_t2(data)
     else:
         t2 = get_t2(data)
@@ -126,18 +140,37 @@ def runmodel(model, n_runs, frequency=0.3, quiet=False, silent=False, normalized
     scores = []
 
     for run in range(n_runs):
+
+        # Create training data
+
         for i in range(n_patients):
 
-            X_train_single, y_train_single = create_dataset(t2[i], masks[i], t2[i], n, prune=prune)
+            if filtered:
+                image_set = [t2[i], t2_filtered[i]]
+                X_train_single, y_train_single = create_multiparametric_dataset(image_set, masks[i], n, prune=prune)
+            else:
+                X_train_single, y_train_single = create_dataset(t2[i], masks[i], n, prune=prune)
+
             X_train += X_train_single
             y_train += y_train_single
+
+
+        # Create testing data
 
         if not quiet:
             print "{model}: {run} making testing data".format(model=modelname, run=run+1)
 
         test_mask = masks[-1]
         test_t2 = t2[-1]
-        X_test, y_test = create_dataset(test_t2, test_mask, test_t2, n, prune = prune)
+        test_t2_filtered = t2_filtered[-1]
+        if filtered:
+            image_set = [test_t2, test_t2_filtered]
+            X_test, y_test = create_multiparametric_dataset(image_set, test_mask, n, prune = prune)
+        else:
+            X_test, y_test = create_dataset(test_t2, test_mask, n, prune=prune)
+
+
+        # Train, predict, and score
 
         if not quiet:
             print "{model}: {run} training".format(model=modelname, run=run+1)
@@ -163,7 +196,7 @@ def runmodel(model, n_runs, frequency=0.3, quiet=False, silent=False, normalized
 if __name__ == "__main__":
 
     model = RandomForestClassifier(n_estimators=10)
-    runmodel(model, 20, quiet=True)
+    runmodel(model, 5, filtered=True, frequency=0.4)
 
 
     # For making sure our data is being constructed correctly
@@ -186,6 +219,13 @@ if __name__ == "__main__":
     # np.savetxt('y_test_array.csv', y_test, delimiter=',')
     # print "Saving y pred"
     # np.savetxt('y_pred_array.csv', y_pred, delimiter=',')
+
+
+    # Also for making sure our data is being constructed correctly
+    # if i == 105 and j == 105 and first_image:
+    #     print "saving subimage at (105,105)"
+    #     np.savetxt('subimage_105-105.csv', subimage, delimiter=',')
+    #     print row
 
     # For examining effect of gabor frequency filtering
     # Applies gabor filter at different frequencies on patient 0
