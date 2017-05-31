@@ -2,6 +2,7 @@ import scipy.io
 import numpy as np
 import sys
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import normalize
 from skimage.filters import gabor
@@ -10,6 +11,9 @@ from matplotlib import pyplot as plt
 
 data = scipy.io.loadmat('data.mat')['data'][0]
 bad_patients = [16, 23, 27, 31, 34, 39, 4, 43, 46, 54, 55, 57, 59, 6, 7, 8, 9]
+bad_patients2 = [1, 10, 13, 14, 15, 17, 19, 2, 20, 22, 24, 25, 26, 29, 3, 32, 37, 38, 40, 41, 42, 44, 45, 47, 48, 49,
+                 5, 51, 52, 53, 58, 60, 61]
+bad_patients += bad_patients2
 
 
 # Command-line arguments 
@@ -55,7 +59,6 @@ def get_t2(data):
 def get_masks(data):
     return [patient[0] for i, patient in enumerate(data) if i not in bad_patients]
 
-
 def create_dataset(image, mask, n, prune=False):
     row = 1
     subimages = []
@@ -92,13 +95,13 @@ if __name__ == "__main__":
 
     print "making training data"
     masks = get_masks(data)
-    t2_normalized = normalize_t2(data)
+    # t2_normalized = normalize_t2(data)
     # Uncomment for non-normalized t2
-    # t2 = get_t2(data)
+    t2 = get_t2(data)
     n_patients = len(masks)-1
 
     print "saving patient 0 normalized data array"
-    np.savetxt('normalized_array.csv', t2_normalized[0], delimiter=',')
+    np.savetxt('normalized_array.csv', t2[0], delimiter=',')
 
     print "saving patient 0 mask data array"
     np.savetxt('mask_array.csv', masks [0], delimiter=',')
@@ -107,7 +110,7 @@ if __name__ == "__main__":
     # print "filtering images"
     # frequencies = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     # test_image = t2_normalized[0]
-
+    #
     # fig, axes = plt.subplots(nrows=1, ncols=9, figsize=(10,3))
 
     # for frequency, ax in zip(frequencies, axes[0:]):
@@ -126,7 +129,7 @@ if __name__ == "__main__":
 
     for i in range(n_patients):
         first_image = True if i==0 else False
-        X_train_single, y_train_single = create_dataset(t2_normalized[i], masks[i], n, prune=prune)
+        X_train_single, y_train_single = create_dataset(t2[i], masks[i], n, prune=prune)
         X_train += X_train_single
         y_train += y_train_single
         if i == 0: 
@@ -138,12 +141,14 @@ if __name__ == "__main__":
     print "making testing data"
 
     test_mask = masks[-1]
-    test_t2 = t2_normalized[-1]
+    test_t2 = t2[-1]
     X_test, y_test = create_dataset(test_t2, test_mask, n, prune = prune)
 
     print "training"
-    classifier = RandomForestClassifier()
+    classifier = RandomForestClassifier(n_estimators=2)
+    # classifier = MLPClassifier()
     classifier.fit(X_train, y_train)
+
 
     print "predicting"
     y_pred = classifier.predict(X_test)
