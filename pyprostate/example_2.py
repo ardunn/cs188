@@ -21,7 +21,6 @@ if len(sys.argv) < 2:
     print "Usage: example_2.py <n> <yes/true/t/y/1 or no/false/f/n/0>"
     sys.exit()
 
-
 # prune option
 prune = True
 axis = 0
@@ -56,12 +55,12 @@ def get_t2(data):
             t2_data.append(t2)
     return t2_data
 
-def get_filtered_t2(data): 
+def get_filtered_t2(data, frequency):
     filtered_data = []
     for i, patient in enumerate(data):
         if i not in bad_patients:
             t2 = patient[1]
-            filt_real, filt_t2 = gabor(t2, frequency=0.3)
+            filt_real, filt_t2 = gabor(t2, frequency=frequency)
             filtered_data.append(filt_t2)
     return filtered_data
 
@@ -101,29 +100,100 @@ def create_dataset(image, mask, filtered_image, n, prune=False):
 
     return X, y
 
+
+def runmodel(model, n_runs, frequency=0.3, quiet=False, silent=False, normalized=False, filtered=False):
+    """
+    Runs a single classifier through sample classifications.
+    """
+
+    modelname = model.__class__.__name__
+
+    if not quiet:
+        print "making training data"
+    masks = get_masks(data)
+
+    if filtered:
+        t2 = get_filtered_t2(data, frequency=frequency)
+    elif normalized:
+        t2 = normalize_t2(data)
+    else:
+        t2 = get_t2(data)
+
+    n_patients = len(masks) - 1
+
+    X_train = []
+    y_train = []
+    scores = []
+
+    for run in range(n_runs):
+        for i in range(n_patients):
+
+            X_train_single, y_train_single = create_dataset(t2[i], masks[i], t2[i], n, prune=prune)
+            X_train += X_train_single
+            y_train += y_train_single
+
+        if not quiet:
+            print "{model}: {run} making testing data".format(model=modelname, run=run+1)
+
+        test_mask = masks[-1]
+        test_t2 = t2[-1]
+        X_test, y_test = create_dataset(test_t2, test_mask, test_t2, n, prune = prune)
+
+        if not quiet:
+            print "{model}: {run} training".format(model=modelname, run=run+1)
+        model.fit(X_train, y_train)
+
+        if not quiet:
+            print "{model}: {run} testing".format(model=modelname, run=run+1)
+        y_pred = model.predict(X_test)
+
+        score = roc_auc_score(y_true=y_test, y_score=y_pred)
+
+        if not silent:
+            print "{model}: {run} score {score}".format(model=modelname, run=run+1, score=score)
+
+        scores.append(score)
+
+    avg_score = np.mean(scores)
+    print "{} achieved an average score of {} in {} runs".format(modelname, avg_score, n_runs)
+    return avg_score
+
+
+
 if __name__ == "__main__":
 
-    print "making training data"
-    masks = get_masks(data)
-    # t2_normalized = normalize_t2(data)
-    t2_filtered = get_filtered_t2(data)
-    # Uncomment for non-normalized t2
-    t2 = get_t2(data)
-    n_patients = len(masks)-1
+    model = RandomForestClassifier(n_estimators=10)
+    runmodel(model, 20, quiet=True)
 
-    print "saving patient 0 normalized data array"
-    np.savetxt('normalized_array.csv', t2[0], delimiter=',')
 
-    print "saving patient 0 mask data array"
-    np.savetxt('mask_array.csv', masks [0], delimiter=',')
+    # For making sure our data is being constructed correctly
+    # print "saving patient 0 normalized data array"
+    # np.savetxt('normalized_array.csv', t2[0], delimiter=',')
+    #
+    # print "saving patient 0 mask data array"
+    # np.savetxt('mask_array.csv', masks [0], delimiter=',')
 
+    # Also for making sure our data is being contstructed correctly
+    # first_image = True if i==0 else False
+    # if i == 0:
+    #     print "Saving y training array"
+    #     np.savetxt('training_y_array.csv', y_train_single, delimiter=',')
+    #     print "Saving X training array"
+    #     np.savetxt('training_X_array.csv', X_train_single, delimiter=',')
+
+    # Also for making sure our data is being constructed correctly
+    # print "Saving y test"
+    # np.savetxt('y_test_array.csv', y_test, delimiter=',')
+    # print "Saving y pred"
+    # np.savetxt('y_pred_array.csv', y_pred, delimiter=',')
+
+    # For examining effect of gabor frequency filtering
     # Applies gabor filter at different frequencies on patient 0
     # print "filtering images"
     # frequencies = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     # test_image = t2_normalized[0]
     #
     # fig, axes = plt.subplots(nrows=1, ncols=9, figsize=(10,3))
-
     # for frequency, ax in zip(frequencies, axes[0:]):
     #     filt_real, filt_imag = gabor(test_image, frequency=frequency)
     #     image_name = 'patient{}_{}'.format(0, frequency)
@@ -132,54 +202,12 @@ if __name__ == "__main__":
     #     ax.set_title(frequency, fontsize=12)
     #     #plt.savefig('{}.png'.format(image_name))
     #     #plt.close()
-    
     # plt.show()
+
+
     
-    X_train = []
-    y_train = []
-
-    n_runs = 10
-    scores = []
-
-    for run in range(n_runs):
-        for i in range(n_patients):
-            first_image = True if i==0 else False
-
-            X_train_single, y_train_single = create_dataset(t2[i], masks[i], t2_filtered[i], n, prune=prune)
-            X_train += X_train_single
-            y_train += y_train_single
-            if i == 0: 
-                print "Saving y training array"
-                np.savetxt('training_y_array.csv', y_train_single, delimiter=',')
-                print "Saving X training array"
-                np.savetxt('training_X_array.csv', X_train_single, delimiter=',')
-
-        print "making testing data", run
-
-        test_mask = masks[-1]
-        test_t2 = t2[-1]
-        test_t2_filtered = t2_filtered[-1]
-        X_test, y_test = create_dataset(test_t2, test_mask, test_t2_filtered, n, prune = prune)
-
-        print "training", run
-        classifier = RandomForestClassifier(n_estimators=2)
-        # classifier = MLPClassifier()
-        classifier.fit(X_train, y_train)
 
 
-        print "predicting", run
-        y_pred = classifier.predict(X_test)
 
-        score = roc_auc_score(y_true=y_test, y_score=y_pred)
-        print "Saving y test"
-        np.savetxt('y_test_array.csv', y_test, delimiter=',')
-        print "Saving y pred"
-        np.savetxt('y_pred_array.csv', y_pred, delimiter=',')
-        print "score", score
-
-        scores.append(score)
-
-
-    print np.mean(scores)
 
 
