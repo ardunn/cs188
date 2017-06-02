@@ -1,7 +1,8 @@
 import scipy.io
 import numpy as np
 import sys
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier,  GradientBoostingClassifier, AdaBoostClassifier, \
+    ExtraTreesClassifier, BaggingClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import normalize
@@ -12,7 +13,7 @@ from sklearn.model_selection import LeaveOneOut
 
 data = scipy.io.loadmat('data.mat')['data'][0]
 
-good_patients = [0, 12, 18, 33, 36, 52, 6]
+good_patients = [0, 12, 18, 33, 36, 52]
 
 
 print "Total patients:", len(data)
@@ -62,11 +63,10 @@ def get_t2(data):
 
 def get_filtered_t2(data, frequency):
     filtered_data = []
-    for i, patient in enumerate(data):
-        if i in good_patients:
-            t2 = patient[1]
-            filt_real, filt_t2 = gabor(t2, frequency=frequency)
-            filtered_data.append(filt_t2)
+    norm_data = normalize_t2(data)
+    for patient_im in norm_data:
+            filt_real, filt_t2 = gabor(patient_im, frequency=frequency)
+            filtered_data.append(filt_real)
     return filtered_data
 
 def get_masks(data):
@@ -204,13 +204,22 @@ def crossvalidate(*args, **kwargs):
     for i, _ in enumerate(data):
         if i in good_patients:
 
-            print "real patient index:", i
+            if 'silent' in kwargs:
+                if kwargs['silent']:
+                    pass
+                else:
+                    print "real patient index:", i
+            else:
+                print "real patient index:", i
+
+
             kwargs['patient_index'] = j
             score = runmodel(*args, **kwargs)
             scores.append(score)
             j += 1
 
-    print "Overall cross validated score", np.mean(scores)
+    cvmodel = args[0].__class__.__name__
+    print "{} overall cross validated score {}".format(cvmodel, np.mean(scores))
     return np.mean(scores)
 
 
@@ -218,9 +227,15 @@ def crossvalidate(*args, **kwargs):
 if __name__ == "__main__":
 
     model = RandomForestClassifier(n_estimators=10)
-    # runmodel(model, filtered=True, frequency=0.4)
-    # runmodel(model)
-    crossvalidate(model, filtered=True, print_example_vector=True)
+    model2 = GradientBoostingClassifier()
+    model3 = AdaBoostClassifier()
+    model4 = ExtraTreesClassifier()
+    model5 = BaggingClassifier()
+
+    for f in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+
+        print "running with frequency of", f
+        crossvalidate(model2, filtered=True, quiet=True, frequency=f, silent=True)
 
     # For examining effect of gabor frequency filtering
     # Applies gabor filter at different frequencies on patient 0
