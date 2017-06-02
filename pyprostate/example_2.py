@@ -176,7 +176,7 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
     test_t2 = t2[patient_index]
     if filtered:
         image_set = [imset[patient_index] for imset in image_set_total]
-        X_test, y_test = create_multiparametric_dataset(image_set, test_mask, n, prune = prune, save_pxs=True)
+        X_test, y_test = create_multiparametric_dataset(image_set, test_mask, n, prune=prune, save_pxs=True)
     else:
         X_test, y_test = create_dataset(test_t2, test_mask, n, prune=prune, save_pxs=True)
 
@@ -242,13 +242,14 @@ if __name__ == "__main__":
 
     # new patients 3, 24, 45, 48
     # good_patients = [0, 12, 18, 33, 36, 52]
-    good_patients = [0, 12, 18, 33, 36, 3, 24, 45, 48, 52]
+    # possible good new patients: 58, 61
+    good_patients = [0, 12, 18, 33, 36, 3, 24, 45, 48, 52, 58, 61]
     # good_patients = [0, 12, 33, 36, 52]
 
     print "Total patients:", len(data)
     print "Bad patients:", len(data) - len(good_patients)
     n_patients = len(good_patients)
-    print "Good patients", n_patients
+    print "Good patients", n_patients, "\n"
 
     # Command-line arguments
     if len(sys.argv) < 2:
@@ -291,7 +292,7 @@ if __name__ == "__main__":
     #
     #         good_patients.remove(k)
 
-    crossvalidate(model2, filtered=True, quiet=False, frequency=0.1, silent=False, save_reconstruction=True)
+    crossvalidate(model2, filtered=True, quiet=False, frequency=0.1, normalized=True, silent=False, save_reconstruction=True)
 
     # For examining effect of gabor frequency filtering
     # Applies gabor filter at different frequencies on patient 0
