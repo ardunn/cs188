@@ -159,9 +159,6 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
             X_train += X_train_single
             y_train += y_train_single
 
-    print X_train
-    print y_train
-
     # Create testing data
 
     if not quiet:
