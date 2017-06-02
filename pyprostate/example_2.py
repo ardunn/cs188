@@ -15,7 +15,7 @@ from sklearn.model_selection import LeaveOneOut
 
 data = scipy.io.loadmat('data.mat')['data'][0]
 
-good_patients = [0, 12, 18, 33, 36, 52]
+good_patients = [0, 12, 11, 33, 36, 52]
 # good_patients = [0, 12, 33, 36, 52]
 
 print "Total patients:", len(data)
@@ -244,7 +244,7 @@ if __name__ == "__main__":
     #     print "running with frequency of", f
     #     crossvalidate(model2, filtered=True, frequency=f, silent=True)
     #
-    crossvalidate(model2, filtered=True, quiet=False, frequency=0.1, silent=False)
+    crossvalidate(model2, filtered=False, quiet=True, frequency=0.1, silent=True)
 
     # For examining effect of gabor frequency filtering
     # Applies gabor filter at different frequencies on patient 0
