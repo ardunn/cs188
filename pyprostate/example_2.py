@@ -16,6 +16,8 @@ bad_patients2 = [1, 10, 13, 14, 15, 17, 19, 2, 20, 22, 24, 25, 26, 29, 3, 32, 37
                  5, 51, 52, 53, 58, 60, 61, 11]
 bad_patients += bad_patients2
 
+n_patients = len(data) - len(bad_patients)
+
 
 # Command-line arguments 
 if len(sys.argv) < 2:
@@ -121,8 +123,8 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
     modelname = model.__class__.__name__
 
     if not quiet:
-        print "{model}: patient {patient}: making training data".format(model=modelname, patient=patient_index)
-        
+        print "{model}: patient {patient}/{n_patients} : making training data".format(model=modelname, n_patients=n_patients-1, patient=patient_index)
+
     masks = get_masks(data)
 
     t2_filtered = get_filtered_t2(data, frequency=frequency)
@@ -131,8 +133,6 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
         t2 = normalize_t2(data)
     else:
         t2 = get_t2(data)
-
-    n_patients = len(masks)
 
     if patient_index == -1:
         patient_index = n_patients - 1
@@ -161,7 +161,7 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
     # Create testing data
 
     if not quiet:
-        print "{model}: patient {patient}: making testing data".format(model=modelname, patient=patient_index)
+        print "{model}: patient {patient}/{n_patients}: making testing data".format(model=modelname, n_patients=n_patients-1, patient=patient_index)
 
     test_mask = masks[patient_index]
     test_t2 = t2[patient_index]
@@ -176,17 +176,17 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
     # Train, predict, and score
 
     if not quiet:
-        print "{model}: patient {patient}: training".format(model=modelname, patient=patient_index)
+        print "{model}: patient {patient}/{n_patients}: training".format(model=modelname, n_patients=n_patients-1, patient=patient_index)
     model.fit(X_train, y_train)
 
     if not quiet:
-        print "{model}: patient {patient}: testing".format(model=modelname, patient=patient_index)
+        print "{model}: patient {patient}/{n_patients}: testing".format(model=modelname, n_patients=n_patients-1, patient=patient_index)
     y_pred = model.predict(X_test)
 
     score = roc_auc_score(y_true=y_test, y_score=y_pred)
 
     if not silent:
-        print "{model}: patient {patient}: score {score}".format(model=modelname, score=score, patient=patient_index)
+        print "{model}: patient {patient}/{n_patients}: score {score}".format(model=modelname, n_patients=n_patients-1, score=score, patient=patient_index)
 
     return score
 
@@ -197,6 +197,7 @@ def crossvalidate(*args, **kwargs):
     for i, _ in enumerate(data):
         if i not in bad_patients:
 
+            print "real patient index:", i
             kwargs['patient_index'] = j
             score = runmodel(*args, **kwargs)
             scores.append(score)
