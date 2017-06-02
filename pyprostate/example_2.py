@@ -11,10 +11,12 @@ from skimage import data, io
 from matplotlib import pyplot as plt
 from sklearn.model_selection import LeaveOneOut
 
+#todo: document, refactor, organize
+
 data = scipy.io.loadmat('data.mat')['data'][0]
 
-# good_patients = [0, 12, 18, 33, 36, 52]
-good_patients = [0, 12, 33, 36, 52]
+good_patients = [0, 12, 18, 33, 36, 52]
+# good_patients = [0, 12, 33, 36, 52]
 
 print "Total patients:", len(data)
 print "Bad patients:", len(data) - len(good_patients)
@@ -127,7 +129,6 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
 
     if silent:
         quiet = True
-
     if not quiet:
         print "{model}: patient {patient}/{n_patients}: making training data".format(model=modelname, n_patients=n_patients, patient=patient_index+1)
 
