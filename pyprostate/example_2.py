@@ -11,13 +11,14 @@ from matplotlib import pyplot as plt
 from sklearn.model_selection import LeaveOneOut
 
 data = scipy.io.loadmat('data.mat')['data'][0]
-bad_patients = [16, 23, 27, 31, 34, 39, 4, 43, 46, 54, 55, 57, 59, 6, 7, 8, 9]
-bad_patients2 = [1, 10, 13, 14, 15, 17, 19, 2, 20, 22, 24, 25, 26, 29, 3, 32, 37, 38, 40, 41, 42, 44, 45, 47, 48, 49,
-                 5, 51, 52, 53, 58, 60, 61, 11]
-bad_patients += bad_patients2
 
-n_patients = len(data) - len(bad_patients)
+good_patients = [12, 18]
 
+
+print "Total patients:", len(data)
+print "Bad patients:", len(data) - len(good_patients)
+n_patients = len(good_patients)
+print "Good patients", n_patients
 
 # Command-line arguments 
 if len(sys.argv) < 2:
@@ -42,7 +43,7 @@ def normalize_t2(data):
     flat_data = []
 
     for i, patient in enumerate(data):
-        if i not in bad_patients:
+        if i in good_patients:
             t2 = patient[1]
             flat_data.append(t2.flatten())
 
@@ -53,7 +54,7 @@ def normalize_t2(data):
 def get_t2(data):
     t2_data = []
     for i, patient in enumerate(data):
-        if i not in bad_patients:
+        if i in good_patients:
             t2 = patient[1]
             t2_data.append(t2)
     return t2_data
@@ -61,14 +62,14 @@ def get_t2(data):
 def get_filtered_t2(data, frequency):
     filtered_data = []
     for i, patient in enumerate(data):
-        if i not in bad_patients:
+        if i in good_patients:
             t2 = patient[1]
             filt_real, filt_t2 = gabor(t2, frequency=frequency)
             filtered_data.append(filt_t2)
     return filtered_data
 
 def get_masks(data):
-    return [patient[0] for i, patient in enumerate(data) if i not in bad_patients]
+    return [patient[0] for i, patient in enumerate(data) if i in good_patients]
 
 def create_dataset(image, mask, n, prune=False):
     row = 1
@@ -123,7 +124,7 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
     modelname = model.__class__.__name__
 
     if not quiet:
-        print "{model}: patient {patient}/{n_patients} : making training data".format(model=modelname, n_patients=n_patients-1, patient=patient_index)
+        print "{model}: patient {patient}/{n_patients}: making training data".format(model=modelname, n_patients=n_patients-1, patient=patient_index)
 
     masks = get_masks(data)
 
@@ -157,6 +158,9 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
 
             X_train += X_train_single
             y_train += y_train_single
+
+    print X_train
+    print y_train
 
     # Create testing data
 
@@ -195,7 +199,7 @@ def crossvalidate(*args, **kwargs):
     scores = []
     j = 0
     for i, _ in enumerate(data):
-        if i not in bad_patients:
+        if i in good_patients:
 
             print "real patient index:", i
             kwargs['patient_index'] = j
@@ -213,7 +217,7 @@ if __name__ == "__main__":
     model = RandomForestClassifier(n_estimators=10)
     # runmodel(model, filtered=True, frequency=0.4)
     # runmodel(model)
-    crossvalidate(model, frequency=0.4)
+    crossvalidate(model)
 
 
     # For making sure our data is being constructed correctly
