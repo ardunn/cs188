@@ -61,11 +61,11 @@ def get_t2(data):
             t2_data.append(t2)
     return t2_data
 
-def get_filtered_t2(data, frequency):
+def get_filtered_t2(data, frequency, sigma_x=None, sigma_y=None):
     filtered_data = []
     norm_data = normalize_t2(data)
     for patient_im in norm_data:
-            filt_real, filt_t2 = gabor(patient_im, frequency=frequency)
+            filt_real, filt_t2 = gabor(patient_im, frequency=frequency, sigma_x=sigma_x, sigma_y=sigma_y)
             filtered_data.append(filt_real)
     return filtered_data
 
@@ -125,12 +125,16 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
 
     modelname = model.__class__.__name__
 
+    if silent:
+        quiet = True
+
     if not quiet:
         print "{model}: patient {patient}/{n_patients}: making training data".format(model=modelname, n_patients=n_patients-1, patient=patient_index)
 
     masks = get_masks(data)
 
-    t2_filtered = get_filtered_t2(data, frequency=frequency)
+    t2_filtered = get_filtered_t2(data, frequency=frequency, sigma_x=2.0, sigma_y=2.0)
+    # t2_filtered2 = get_filtered_t2(data, frequency=frequency, sigma_y=2.0, sigma_x=2.0)
 
     if normalized:
         t2 = normalize_t2(data)
@@ -154,6 +158,7 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
 
             if filtered:
                 image_set = [t2[i], t2_filtered[i]]
+                # image_set = [t2[i], t2_filtered[i], t2_filtered2[i]]
                 X_train_single, y_train_single = create_multiparametric_dataset(image_set, masks[i], n, prune=prune)
             else:
                 X_train_single, y_train_single = create_dataset(t2[i], masks[i], n, prune=prune)
@@ -173,8 +178,10 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
     test_mask = masks[patient_index]
     test_t2 = t2[patient_index]
     test_t2_filtered = t2_filtered[patient_index]
+    # test_t2_filtered2 = t2_filtered2[patient_index]
     if filtered:
         image_set = [test_t2, test_t2_filtered]
+        # image_set = [test_t2, test_t2_filtered, test_t2_filtered2]
         X_test, y_test = create_multiparametric_dataset(image_set, test_mask, n, prune = prune)
     else:
         X_test, y_test = create_dataset(test_t2, test_mask, n, prune=prune)
@@ -235,7 +242,9 @@ if __name__ == "__main__":
     for f in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
 
         print "running with frequency of", f
-        crossvalidate(model2, filtered=True, quiet=True, frequency=f, silent=True)
+        crossvalidate(model2, filtered=True, frequency=f, silent=True)
+
+    # crossvalidate(model2, filtered=True, quiet=False, frequency=0.1, silent=False)
 
     # For examining effect of gabor frequency filtering
     # Applies gabor filter at different frequencies on patient 0
