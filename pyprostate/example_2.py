@@ -14,6 +14,37 @@ from sklearn.model_selection import LeaveOneOut
 
 #todo: document, refactor, organize
 
+<<<<<<< HEAD
+=======
+data = scipy.io.loadmat('data.mat')['data'][0]
+
+good_patients = [0, 12, 11, 33, 36, 52]
+# good_patients = [0, 12, 33, 36, 52]
+
+print "Total patients:", len(data)
+print "Bad patients:", len(data) - len(good_patients)
+n_patients = len(good_patients)
+print "Good patients", n_patients
+
+# Command-line arguments 
+if len(sys.argv) < 2:
+    print "Usage: example_2.py <n> <yes/true/t/y/1 or no/false/f/n/0>"
+    sys.exit()
+
+# prune option
+prune = True
+axis = 0
+
+first_image = False 
+
+n = int(sys.argv[1])
+feature_vector_len = (2*n + 1)**2
+
+if sys.argv[2].lower() in ('yes', 'true', 't', 'y', '1'):
+    prune = True
+if sys.argv[2].lower() in ('no', 'false', 'f', 'n', '0'):
+    prune = False
+>>>>>>> 07cdfcc73e4b889f37b22f4824114519caf776ba
 
 def normalize_t2(data):
 
@@ -264,6 +295,7 @@ if __name__ == "__main__":
     #         crossvalidate(model2, filtered=False, quiet=False, frequency=0.1, silent=True)
     #
     #         good_patients.remove(k)
+    crossvalidate(model2, filtered=False, quiet=True, frequency=0.1, silent=True)
 
     # For examining effect of gabor frequency filtering
     # Applies gabor filter at different frequencies on patient 0
