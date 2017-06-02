@@ -13,7 +13,7 @@ from sklearn.model_selection import LeaveOneOut
 data = scipy.io.loadmat('data.mat')['data'][0]
 bad_patients = [16, 23, 27, 31, 34, 39, 4, 43, 46, 54, 55, 57, 59, 6, 7, 8, 9]
 bad_patients2 = [1, 10, 13, 14, 15, 17, 19, 2, 20, 22, 24, 25, 26, 29, 3, 32, 37, 38, 40, 41, 42, 44, 45, 47, 48, 49,
-                 5, 51, 52, 53, 58, 60, 61]
+                 5, 51, 52, 53, 58, 60, 61, 11]
 bad_patients += bad_patients2
 
 
@@ -212,7 +212,7 @@ if __name__ == "__main__":
     model = RandomForestClassifier(n_estimators=10)
     # runmodel(model, filtered=True, frequency=0.4)
     # runmodel(model)
-    crossvalidate(model, frequency=0.5)
+    crossvalidate(model, frequency=0.4)
 
 
     # For making sure our data is being constructed correctly
