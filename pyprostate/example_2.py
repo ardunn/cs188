@@ -3,6 +3,7 @@ import numpy as np
 import sys
 from sklearn.ensemble import RandomForestClassifier,  GradientBoostingClassifier, AdaBoostClassifier, \
     ExtraTreesClassifier, BaggingClassifier
+from sklearn.svm import SVC
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import normalize
@@ -13,34 +14,6 @@ from sklearn.model_selection import LeaveOneOut
 
 #todo: document, refactor, organize
 
-data = scipy.io.loadmat('data.mat')['data'][0]
-
-good_patients = [0, 12, 18, 33, 36, 52]
-# good_patients = [0, 12, 33, 36, 52]
-
-print "Total patients:", len(data)
-print "Bad patients:", len(data) - len(good_patients)
-n_patients = len(good_patients)
-print "Good patients", n_patients
-
-# Command-line arguments 
-if len(sys.argv) < 2:
-    print "Usage: example_2.py <n> <yes/true/t/y/1 or no/false/f/n/0>"
-    sys.exit()
-
-# prune option
-prune = True
-axis = 0
-
-first_image = False 
-
-n = int(sys.argv[1])
-feature_vector_len = (2*n + 1)**2
-
-if sys.argv[2].lower() in ('yes', 'true', 't', 'y', '1'):
-    prune = True
-if sys.argv[2].lower() in ('no', 'false', 'f', 'n', '0'):
-    prune = False
 
 def normalize_t2(data):
 
@@ -233,18 +206,64 @@ def crossvalidate(*args, **kwargs):
 
 if __name__ == "__main__":
 
+    data = scipy.io.loadmat('data.mat')['data'][0]
+
+
+    # unscorable patients (ie all cancer)
+    unscorable_patients = [27]
+
+    # new patients 3, 24, 45, 48
+    # good_patients = [0, 12, 18, 33, 36, 52]
+    good_patients = [0, 12, 33, 36, 3, 24, 45, 48]
+    # good_patients = [0, 12, 33, 36, 52]
+
+    print "Total patients:", len(data)
+    print "Bad patients:", len(data) - len(good_patients)
+    n_patients = len(good_patients)
+    print "Good patients", n_patients
+
+    # Command-line arguments
+    if len(sys.argv) < 2:
+        print "Usage: example_2.py <n> <yes/true/t/y/1 or no/false/f/n/0>"
+        sys.exit()
+
+    # prune option
+    prune = True
+    axis = 0
+
+    first_image = False
+
+    n = int(sys.argv[1])
+    feature_vector_len = (2 * n + 1) ** 2
+
+    if sys.argv[2].lower() in ('yes', 'true', 't', 'y', '1'):
+        prune = True
+    if sys.argv[2].lower() in ('no', 'false', 'f', 'n', '0'):
+        prune = False
+
     model = RandomForestClassifier(n_estimators=10)
     model2 = GradientBoostingClassifier()
     model3 = AdaBoostClassifier()
     model4 = ExtraTreesClassifier()
     model5 = BaggingClassifier()
+    model6 = SVC()
 
     # for f in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
     #
     #     print "running with frequency of", f
     #     crossvalidate(model2, filtered=True, frequency=f, silent=True)
     #
-    crossvalidate(model2, filtered=True, quiet=False, frequency=0.1, silent=False)
+
+    crossvalidate(model2, filtered=True, frequency=0.1, quiet=True)
+
+    # for k in range(28, len(data)):
+    #     if k not in good_patients:
+    #         good_patients.append(k)
+    #
+    #         print "Adding candidate patient", k, "to good_patients"
+    #         crossvalidate(model2, filtered=False, quiet=False, frequency=0.1, silent=True)
+    #
+    #         good_patients.remove(k)
 
     # For examining effect of gabor frequency filtering
     # Applies gabor filter at different frequencies on patient 0
