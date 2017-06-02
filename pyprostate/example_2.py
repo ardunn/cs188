@@ -13,8 +13,8 @@ from sklearn.model_selection import LeaveOneOut
 
 data = scipy.io.loadmat('data.mat')['data'][0]
 
-good_patients = [0, 12, 18, 33, 36, 52]
-
+# good_patients = [0, 12, 18, 33, 36, 52]
+good_patients = [0, 12, 33, 36, 52]
 
 print "Total patients:", len(data)
 print "Bad patients:", len(data) - len(good_patients)
@@ -129,12 +129,9 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
         quiet = True
 
     if not quiet:
-        print "{model}: patient {patient}/{n_patients}: making training data".format(model=modelname, n_patients=n_patients-1, patient=patient_index)
+        print "{model}: patient {patient}/{n_patients}: making training data".format(model=modelname, n_patients=n_patients, patient=patient_index+1)
 
     masks = get_masks(data)
-
-    t2_filtered = get_filtered_t2(data, frequency=frequency, sigma_x=2.0, sigma_y=2.0)
-    # t2_filtered2 = get_filtered_t2(data, frequency=frequency, sigma_y=2.0, sigma_x=2.0)
 
     if normalized:
         t2 = normalize_t2(data)
@@ -143,6 +140,12 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
 
     if patient_index == -1:
         patient_index = n_patients - 1
+
+    t2_filtered = get_filtered_t2(data, frequency=frequency, sigma_x=2.0, sigma_y=2.0)
+    # t2_filtered2 = get_filtered_t2(data, frequency=frequency, sigma_y=2.0, sigma_x=2.0)
+
+    image_set_total = [t2]
+    image_set_total.append(t2_filtered)
 
     X_train = []
     y_train = []
@@ -157,8 +160,7 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
         else:
 
             if filtered:
-                image_set = [t2[i], t2_filtered[i]]
-                # image_set = [t2[i], t2_filtered[i], t2_filtered2[i]]
+                image_set = [imset[i] for imset in image_set_total]
                 X_train_single, y_train_single = create_multiparametric_dataset(image_set, masks[i], n, prune=prune)
             else:
                 X_train_single, y_train_single = create_dataset(t2[i], masks[i], n, prune=prune)
@@ -173,15 +175,12 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
     # Create testing data
 
     if not quiet:
-        print "{model}: patient {patient}/{n_patients}: making testing data".format(model=modelname, n_patients=n_patients-1, patient=patient_index)
+        print "{model}: patient {patient}/{n_patients}: making testing data".format(model=modelname, n_patients=n_patients, patient=patient_index+1)
 
     test_mask = masks[patient_index]
     test_t2 = t2[patient_index]
-    test_t2_filtered = t2_filtered[patient_index]
-    # test_t2_filtered2 = t2_filtered2[patient_index]
     if filtered:
-        image_set = [test_t2, test_t2_filtered]
-        # image_set = [test_t2, test_t2_filtered, test_t2_filtered2]
+        image_set = [imset[patient_index] for imset in image_set_total]
         X_test, y_test = create_multiparametric_dataset(image_set, test_mask, n, prune = prune)
     else:
         X_test, y_test = create_dataset(test_t2, test_mask, n, prune=prune)
@@ -190,17 +189,17 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
     # Train, predict, and score
 
     if not quiet:
-        print "{model}: patient {patient}/{n_patients}: training".format(model=modelname, n_patients=n_patients-1, patient=patient_index)
+        print "{model}: patient {patient}/{n_patients}: training".format(model=modelname, n_patients=n_patients, patient=patient_index+1)
     model.fit(X_train, y_train)
 
     if not quiet:
-        print "{model}: patient {patient}/{n_patients}: testing".format(model=modelname, n_patients=n_patients-1, patient=patient_index)
+        print "{model}: patient {patient}/{n_patients}: testing".format(model=modelname, n_patients=n_patients, patient=patient_index+1)
     y_pred = model.predict(X_test)
 
     score = roc_auc_score(y_true=y_test, y_score=y_pred)
 
     if not silent:
-        print "{model}: patient {patient}/{n_patients}: score {score}".format(model=modelname, n_patients=n_patients-1, score=score, patient=patient_index)
+        print "{model}: patient {patient}/{n_patients}: score {score}".format(model=modelname, n_patients=n_patients, score=score, patient=patient_index+1)
 
     return score
 
@@ -239,12 +238,12 @@ if __name__ == "__main__":
     model4 = ExtraTreesClassifier()
     model5 = BaggingClassifier()
 
-    for f in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
-
-        print "running with frequency of", f
-        crossvalidate(model2, filtered=True, frequency=f, silent=True)
-
-    # crossvalidate(model2, filtered=True, quiet=False, frequency=0.1, silent=False)
+    # for f in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+    #
+    #     print "running with frequency of", f
+    #     crossvalidate(model2, filtered=True, frequency=f, silent=True)
+    #
+    crossvalidate(model2, filtered=True, quiet=False, frequency=0.1, silent=False)
 
     # For examining effect of gabor frequency filtering
     # Applies gabor filter at different frequencies on patient 0
