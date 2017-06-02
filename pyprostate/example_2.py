@@ -12,7 +12,7 @@ from sklearn.model_selection import LeaveOneOut
 
 data = scipy.io.loadmat('data.mat')['data'][0]
 
-good_patients = [12, 18]
+good_patients = [0, 12, 18, 33, 36, 52, 6]
 
 
 print "Total patients:", len(data)
@@ -32,6 +32,7 @@ axis = 0
 first_image = False 
 
 n = int(sys.argv[1])
+feature_vector_len = (2*n + 1)**2
 
 if sys.argv[2].lower() in ('yes', 'true', 't', 'y', '1'):
     prune = True
@@ -116,7 +117,8 @@ def create_multiparametric_dataset(image_set, mask, n, prune=False):
 
     return X_new, y
 
-def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, normalized=False, filtered=False):
+def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, normalized=False, filtered=False,
+             print_example_vector=False):
     """
     Runs a single classifier through sample classifications.
     """
@@ -158,6 +160,10 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
 
             X_train += X_train_single
             y_train += y_train_single
+
+    if print_example_vector:
+        ex_vec = X_train[0]
+        print ex_vec
 
     # Create testing data
 
@@ -214,36 +220,7 @@ if __name__ == "__main__":
     model = RandomForestClassifier(n_estimators=10)
     # runmodel(model, filtered=True, frequency=0.4)
     # runmodel(model)
-    crossvalidate(model)
-
-
-    # For making sure our data is being constructed correctly
-    # print "saving patient 0 normalized data array"
-    # np.savetxt('normalized_array.csv', t2[0], delimiter=',')
-    #
-    # print "saving patient 0 mask data array"
-    # np.savetxt('mask_array.csv', masks [0], delimiter=',')
-
-    # Also for making sure our data is being contstructed correctly
-    # first_image = True if i==0 else False
-    # if i == 0:
-    #     print "Saving y training array"
-    #     np.savetxt('training_y_array.csv', y_train_single, delimiter=',')
-    #     print "Saving X training array"
-    #     np.savetxt('training_X_array.csv', X_train_single, delimiter=',')
-
-    # Also for making sure our data is being constructed correctly
-    # print "Saving y test"
-    # np.savetxt('y_test_array.csv', y_test, delimiter=',')
-    # print "Saving y pred"
-    # np.savetxt('y_pred_array.csv', y_pred, delimiter=',')
-
-
-    # Also for making sure our data is being constructed correctly
-    # if i == 105 and j == 105 and first_image:
-    #     print "saving subimage at (105,105)"
-    #     np.savetxt('subimage_105-105.csv', subimage, delimiter=',')
-    #     print row
+    crossvalidate(model, filtered=True, print_example_vector=True)
 
     # For examining effect of gabor frequency filtering
     # Applies gabor filter at different frequencies on patient 0
