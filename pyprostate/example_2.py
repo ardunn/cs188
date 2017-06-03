@@ -13,8 +13,6 @@ from matplotlib import pyplot as plt
 from sklearn.model_selection import LeaveOneOut
 import scipy.misc
 
-#todo: document, refactor, organize
-
 def normalize_t2(data):
 
     flat_data = []
@@ -292,7 +290,7 @@ if __name__ == "__main__":
     #
     #         good_patients.remove(k)
 
-    crossvalidate(model2, filtered=True, quiet=False, frequency=0.1, normalized=True, silent=False, save_reconstruction=True)
+    crossvalidate(model2, filtered=True, quiet=False, frequency=0.1, silent=False, save_reconstruction=True)
 
     # For examining effect of gabor frequency filtering
     # Applies gabor filter at different frequencies on patient 0
