@@ -3,6 +3,7 @@ import numpy as np
 import sys
 from sklearn.ensemble import RandomForestClassifier,  GradientBoostingClassifier, AdaBoostClassifier, \
     ExtraTreesClassifier, BaggingClassifier
+from sklearn.svm import SVC
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import normalize
@@ -10,37 +11,7 @@ from skimage.filters import gabor
 from skimage import data, io
 from matplotlib import pyplot as plt
 from sklearn.model_selection import LeaveOneOut
-
-#todo: document, refactor, organize
-
-data = scipy.io.loadmat('data.mat')['data'][0]
-
-good_patients = [0, 12, 11, 33, 36, 52]
-# good_patients = [0, 12, 33, 36, 52]
-
-print "Total patients:", len(data)
-print "Bad patients:", len(data) - len(good_patients)
-n_patients = len(good_patients)
-print "Good patients", n_patients
-
-# Command-line arguments 
-if len(sys.argv) < 2:
-    print "Usage: example_2.py <n> <yes/true/t/y/1 or no/false/f/n/0>"
-    sys.exit()
-
-# prune option
-prune = True
-axis = 0
-
-first_image = False 
-
-n = int(sys.argv[1])
-feature_vector_len = (2*n + 1)**2
-
-if sys.argv[2].lower() in ('yes', 'true', 't', 'y', '1'):
-    prune = True
-if sys.argv[2].lower() in ('no', 'false', 'f', 'n', '0'):
-    prune = False
+import scipy.misc
 
 def normalize_t2(data):
 
@@ -74,10 +45,11 @@ def get_filtered_t2(data, frequency, sigma_x=None, sigma_y=None):
 def get_masks(data):
     return [patient[0] for i, patient in enumerate(data) if i in good_patients]
 
-def create_dataset(image, mask, n, prune=False):
+def create_dataset(image, mask, n, prune=False, save_pxs=False):
     row = 1
     subimages = []
     y = []
+    acpx = []
     for i in range(n, 255-n):
         for j in range(n, 255-n):
             if mask[i,j]!=0:
@@ -91,23 +63,25 @@ def create_dataset(image, mask, n, prune=False):
                             break
 
                 if store:
+                    acpx.append((i, j))
                     subimage = image[i-n:i+n+1, j-n:j+n+1]
-                    subimages.append(image[i-n:i+n+1, j-n:j+n+1])
+                    subimages.append(subimage)
                     # translate (2 -> 1) and 1 -> 0
                     yi = 1 if int(round(mask[i,j]))==2 else 0
                     y.append(yi)
                     row += 1
 
+    if save_pxs:
+        active_pixels.append(acpx)
     X = [image.flatten() for image in subimages]
-
     return X, y
 
-def create_multiparametric_dataset(image_set, mask, n, prune=False):
+def create_multiparametric_dataset(image_set, mask, n, prune=False, save_pxs=False):
     X_tot = []
-    _, y = create_dataset(image_set[0], mask, n, prune=prune)
+    _, y = create_dataset(image_set[0], mask, n, prune=prune, save_pxs=save_pxs)
 
     for image in image_set:
-        X, y = create_dataset(image, mask, n, prune=prune)
+        X, _ = create_dataset(image, mask, n, prune=prune)
         X_tot.append(X)
 
     X_new = []
@@ -119,8 +93,26 @@ def create_multiparametric_dataset(image_set, mask, n, prune=False):
 
     return X_new, y
 
+def reconstruct(mask, y_pred, pixels):
+
+    # change mask so that cancer prediction is gone (ie prevent cheating)
+    for pi in range(256):
+        for pj in range(256):
+            if int(round(mask[pi, pj])) == 2:
+                mask[pi, pj] = 1
+
+    # insert the actual prediction
+    for p, pixel in enumerate(pixels):
+        pixel_x = pixel[0]
+        pixel_y = pixel[1]
+        # set the new mask pixel to the predicted score, moving 0 -> 1 (prostate, not cancer)
+        #  and 1 -> 2 (prostate, cancer)
+        mask[pixel_x, pixel_y] = y_pred[p] + 1
+
+    return mask
+
 def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, normalized=False, filtered=False,
-             print_example_vector=False):
+             print_example_vector=False, save_reconstruction=False):
     """
     Runs a single classifier through sample classifications.
     """
@@ -182,19 +174,18 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
     test_t2 = t2[patient_index]
     if filtered:
         image_set = [imset[patient_index] for imset in image_set_total]
-        X_test, y_test = create_multiparametric_dataset(image_set, test_mask, n, prune = prune)
+        X_test, y_test = create_multiparametric_dataset(image_set, test_mask, n, prune=prune, save_pxs=True)
     else:
-        X_test, y_test = create_dataset(test_t2, test_mask, n, prune=prune)
-
+        X_test, y_test = create_dataset(test_t2, test_mask, n, prune=prune, save_pxs=True)
 
     # Train, predict, and score
 
     if not quiet:
-        print "{model}: patient {patient}/{n_patients}: training".format(model=modelname, n_patients=n_patients, patient=patient_index+1)
+        print "{model}: patient {patient}/{n_patients}: training using {n_pts} points".format(model=modelname, n_patients=n_patients, patient=patient_index+1, n_pts=len(y_train))
     model.fit(X_train, y_train)
 
     if not quiet:
-        print "{model}: patient {patient}/{n_patients}: testing".format(model=modelname, n_patients=n_patients, patient=patient_index+1)
+        print "{model}: patient {patient}/{n_patients}: testing using {n_pts} points".format(model=modelname, n_patients=n_patients, patient=patient_index+1, n_pts=len(y_test))
     y_pred = model.predict(X_test)
 
     score = roc_auc_score(y_true=y_test, y_score=y_pred)
@@ -202,7 +193,14 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
     if not silent:
         print "{model}: patient {patient}/{n_patients}: score {score}".format(model=modelname, n_patients=n_patients, score=score, patient=patient_index+1)
 
-    return score
+    if save_reconstruction:
+        if not silent:
+            print "{model}: patient {patient}/{n_patients}: saving reconstructed mask".format(model=modelname, n_patients=n_patients, patient=patient_index+1)
+        reconstruction = reconstruct(test_mask, y_pred, active_pixels[patient_index])
+    else:
+        reconstruction = None
+
+    return score, reconstruction
 
 def crossvalidate(*args, **kwargs):
 
@@ -219,10 +217,13 @@ def crossvalidate(*args, **kwargs):
             else:
                 print "real patient index:", i
 
-
             kwargs['patient_index'] = j
-            score = runmodel(*args, **kwargs)
+            score, reconstruction = runmodel(*args, **kwargs)
             scores.append(score)
+
+            if 'save_reconstruction' in kwargs:
+                if kwargs['save_reconstruction']:
+                    scipy.misc.imsave("patient_{}_reconstruction.png".format(i), reconstruction)
             j += 1
 
     cvmodel = args[0].__class__.__name__
@@ -230,21 +231,66 @@ def crossvalidate(*args, **kwargs):
     return np.mean(scores)
 
 
-
 if __name__ == "__main__":
+
+    data = scipy.io.loadmat('data.mat')['data'][0]
+
+    # unscorable patients (ie all cancer)
+    unscorable_patients = [27]
+
+    # new patients 3, 24, 45, 48
+    # good_patients = [0, 12, 18, 33, 36, 52]
+    # possible good new patients: 58, 61
+    good_patients = [0, 12, 18, 33, 36, 3, 24, 45, 48, 52, 58, 61]
+    # good_patients = [0, 12, 33, 36, 52]
+
+    print "Total patients:", len(data)
+    print "Bad patients:", len(data) - len(good_patients)
+    n_patients = len(good_patients)
+    print "Good patients", n_patients, "\n"
+
+    # Command-line arguments
+    if len(sys.argv) < 2:
+        print "Usage: example_2.py <n> <yes/true/t/y/1 or no/false/f/n/0>"
+        sys.exit()
+
+    active_pixels = []
+
+    # prune option
+    prune = True
+    axis = 0
+
+    n = int(sys.argv[1])
+    feature_vector_len = (2 * n + 1) ** 2
+
+    if sys.argv[2].lower() in ('yes', 'true', 't', 'y', '1'):
+        prune = True
+    if sys.argv[2].lower() in ('no', 'false', 'f', 'n', '0'):
+        prune = False
 
     model = RandomForestClassifier(n_estimators=10)
     model2 = GradientBoostingClassifier()
     model3 = AdaBoostClassifier()
     model4 = ExtraTreesClassifier()
     model5 = BaggingClassifier()
+    model6 = SVC()
 
     # for f in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
     #
     #     print "running with frequency of", f
     #     crossvalidate(model2, filtered=True, frequency=f, silent=True)
     #
-    crossvalidate(model2, filtered=False, quiet=True, frequency=0.1, silent=True)
+
+    # for k in range(28, len(data)):
+    #     if k not in good_patients:
+    #         good_patients.append(k)
+    #
+    #         print "Adding candidate patient", k, "to good_patients"
+    #         crossvalidate(model2, filtered=False, quiet=False, frequency=0.1, silent=True)
+    #
+    #         good_patients.remove(k)
+
+    crossvalidate(model2, filtered=True, quiet=False, frequency=0.1, silent=False, save_reconstruction=True)
 
     # For examining effect of gabor frequency filtering
     # Applies gabor filter at different frequencies on patient 0
