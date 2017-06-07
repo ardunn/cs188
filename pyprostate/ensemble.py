@@ -246,7 +246,7 @@ def test_frequencies():
     for f in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
 
         print "running with frequency of", f
-        auc = crossvalidate(model2, filtered=True, frequency=f, silent=True)
+        auc = crossvalidate(model2, filter_on=True, frequency=f, silent=True)
         results[f] = auc
 
     pickle.dump(results, open('test_frequencies.p', 'wb'))
