@@ -89,10 +89,10 @@ def statistical_final_run():
     """
 
     results = []
-    for i in range(10):
-        results.append(crossvalidate(model2, adc_on=True, filter_on=True, frequency=0.1))
+    for i in range(9):
+        results.append(crossvalidate(model2, adc_on=True, filter_on=True, frequency=0.3, quiet=True))
 
-    results.append(crossvalidate(model2, adc_on=True, filter_on=True, frequency=0.1, save_reconstruction=True))
+    results.append(crossvalidate(model2, adc_on=True, filter_on=True, frequency=0.3, save_reconstruction=True, quiet=True))
     mean_auc = np.mean(results)
 
     pickle.dump({'statistical_final_run': mean_auc}, open('statisical_final_run.p', 'wb'))
