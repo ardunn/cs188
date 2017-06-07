@@ -1,4 +1,4 @@
-from ensemble import crossvalidate, model1, model2, model3, model4, model5, model6
+from ensemble import crossvalidate, model1, model2, model3, model4, model5
 import pickle
 import numpy as np
 
@@ -6,7 +6,7 @@ import numpy as np
 def model_influence():
     results = {}
 
-    for model in [model1, model2, model3, model4, model5, model6]:
+    for model in [model1, model2, model3, model4, model5]:
         auc = crossvalidate(model, quiet=True)
         results[str(model.__class__.__name__)] = auc
 
@@ -71,4 +71,4 @@ def statistical_final_run():
 
 
 if __name__== "__main__":
-    frequency_influence()
+    statistical_final_run()
