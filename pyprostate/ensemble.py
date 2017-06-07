@@ -325,9 +325,11 @@ if __name__ == "__main__":
     # result .6422
 
     #right side bottom
-    crossvalidate(model2, filter_on=True, frequency=0.1, adc_on=True)
+    #crossvalidate(model2, filter_on=True, frequency=0.1, adc_on=True)
     # result .724
 
+    test_frequencies()
+    
     # For examining effect of gabor frequency filtering
     # Applies gabor filter at different frequencies on patient 0
     # print "filtering images"
