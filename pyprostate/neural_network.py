@@ -1,3 +1,9 @@
+"""
+This was an attempt at using a basic convolutional neural network for image processing of the data. However, this
+approach was not particularly 
+"""
+
+
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D
 from keras.utils import np_utils
@@ -53,7 +59,7 @@ if __name__ == "__main__":
 
     # Command-line arguments
     if len(sys.argv) < 2:
-        print "Usage: example_2.py <n> <yes/true/t/y/1 or no/false/f/n/0>"
+        print "Usage: neural_network.py > <yes/true/t/y/1 or no/false/f/n/0>"
         sys.exit()
 
     # prune option

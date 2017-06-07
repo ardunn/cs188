@@ -4,14 +4,12 @@ import sys
 from sklearn.ensemble import RandomForestClassifier,  GradientBoostingClassifier, AdaBoostClassifier, \
     ExtraTreesClassifier, BaggingClassifier
 from sklearn.svm import SVC
-from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import normalize
 from skimage.filters import gabor
-from skimage import data, io
-from matplotlib import pyplot as plt
-from sklearn.model_selection import LeaveOneOut
+from skimage import data
 import scipy.misc
+import pickle
 
 def normalize_t2(data):
 
@@ -243,6 +241,16 @@ def crossvalidate(*args, **kwargs):
     print "{} overall cross validated score {}".format(cvmodel, np.mean(scores))
     return np.mean(scores)
 
+def test_frequencies():
+    results = {}
+    for f in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+
+        print "running with frequency of", f
+        auc = crossvalidate(model2, filtered=True, frequency=f, silent=True)
+        results[f] = auc
+
+    pickle.dump(results, open('test_frequencies.p', 'wb'))
+
 
 if __name__ == "__main__":
 
@@ -264,7 +272,7 @@ if __name__ == "__main__":
 
     # Command-line arguments
     if len(sys.argv) < 2:
-        print "Usage: example_2.py <n> <yes/true/t/y/1 or no/false/f/n/0>"
+        print "Usage: ensemble.py <n> <yes/true/t/y/1 or no/false/f/n/0>"
         sys.exit()
 
     active_pixels = []
@@ -287,12 +295,6 @@ if __name__ == "__main__":
     model4 = ExtraTreesClassifier()
     model5 = BaggingClassifier()
     model6 = SVC()
-
-    # for f in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
-    #
-    #     print "running with frequency of", f
-    #     crossvalidate(model2, filtered=True, frequency=f, silent=True)
-    #
 
     # for k in range(28, len(data)):
     #     if k not in good_patients:
