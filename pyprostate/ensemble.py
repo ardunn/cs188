@@ -68,7 +68,6 @@ if sys.argv[2].lower() in ('yes', 'true', 't', 'y', '1'):
 if sys.argv[2].lower() in ('no', 'false', 'f', 'n', '0'):
     prune = False
 
-
 # Possible, relatively successful models
 model1 = RandomForestClassifier(n_estimators=10)
 model2 = GradientBoostingClassifier()
@@ -421,7 +420,6 @@ def crossvalidate(*args, **kwargs):
     cvmodel = args[0].__class__.__name__
     print "{} overall cross validated score {}".format(cvmodel, np.mean(scores))
     return np.mean(scores)
-
 
 if __name__ == "__main__":
     # Lets run an example using T2 MRI, ADC, T2 MRI fitlered, and saving reconstructions!
