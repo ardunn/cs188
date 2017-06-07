@@ -9,7 +9,44 @@ from sklearn.preprocessing import normalize
 from skimage.filters import gabor
 from skimage import data
 import scipy.misc
-import pickle
+
+
+data = scipy.io.loadmat('data.mat')['data'][0]
+
+# unscorable patients (ie all cancer)
+unscorable_patients = [27]
+good_patients = [0, 12, 18, 33, 36, 3, 24, 45, 48, 52, 58, 61]
+
+print "Total patients:", len(data)
+print "Bad patients:", len(data) - len(good_patients)
+n_patients = len(good_patients)
+print "Good patients", n_patients, "\n"
+
+# Command-line arguments
+if len(sys.argv) < 2:
+    print "Usage: ensemble.py <n> <yes/true/t/y/1 or no/false/f/n/0>"
+    sys.exit()
+
+active_pixels = []
+
+# prune option
+prune = True
+axis = 0
+
+n = int(sys.argv[1])
+feature_vector_len = (2 * n + 1) ** 2
+
+if sys.argv[2].lower() in ('yes', 'true', 't', 'y', '1'):
+    prune = True
+if sys.argv[2].lower() in ('no', 'false', 'f', 'n', '0'):
+    prune = False
+
+model1 = RandomForestClassifier(n_estimators=10)
+model2 = GradientBoostingClassifier()
+model3 = AdaBoostClassifier()
+model4 = ExtraTreesClassifier()
+model5 = BaggingClassifier()
+model6 = SVC()
 
 def normalize_t2(data):
 
@@ -241,111 +278,10 @@ def crossvalidate(*args, **kwargs):
     print "{} overall cross validated score {}".format(cvmodel, np.mean(scores))
     return np.mean(scores)
 
-def test_frequencies():
-    results = {}
-    for f in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
-
-        print "running with frequency of", f
-        auc = crossvalidate(model2, filter_on=True, frequency=f, silent=True)
-        results[f] = auc
-
-    pickle.dump(results, open('test_frequencies.p', 'wb'))
-
 
 if __name__ == "__main__":
+    crossvalidate(model2, filter_on=True, adc_on=True, frequency=0.1, save_reconstruction=True)
 
-    data = scipy.io.loadmat('data.mat')['data'][0]
-
-    # unscorable patients (ie all cancer)
-    unscorable_patients = [27]
-
-    # new patients 3, 24, 45, 48
-    # good_patients = [0, 12, 18, 33, 36, 52]
-    # possible good new patients: 58, 61
-    good_patients = [0, 12, 18, 33, 36, 3, 24, 45, 48, 52, 58, 61]
-    # good_patients = [0, 12, 33, 36, 52]
-
-    print "Total patients:", len(data)
-    print "Bad patients:", len(data) - len(good_patients)
-    n_patients = len(good_patients)
-    print "Good patients", n_patients, "\n"
-
-    # Command-line arguments
-    if len(sys.argv) < 2:
-        print "Usage: ensemble.py <n> <yes/true/t/y/1 or no/false/f/n/0>"
-        sys.exit()
-
-    active_pixels = []
-
-    # prune option
-    prune = True
-    axis = 0
-
-    n = int(sys.argv[1])
-    feature_vector_len = (2 * n + 1) ** 2
-
-    if sys.argv[2].lower() in ('yes', 'true', 't', 'y', '1'):
-        prune = True
-    if sys.argv[2].lower() in ('no', 'false', 'f', 'n', '0'):
-        prune = False
-
-    model = RandomForestClassifier(n_estimators=10)
-    model2 = GradientBoostingClassifier()
-    model3 = AdaBoostClassifier()
-    model4 = ExtraTreesClassifier()
-    model5 = BaggingClassifier()
-    model6 = SVC()
-
-    # for k in range(28, len(data)):
-    #     if k not in good_patients:
-    #         good_patients.append(k)
-    #
-    #         print "Adding candidate patient", k, "to good_patients"
-    #         crossvalidate(model2, filtered=False, quiet=False, frequency=0.1, silent=True)
-    #
-    #         good_patients.remove(k)
-
-
-    # dwi level of 2000 worked best but didnt help
-    # for dwi_lvl in ['10', '100', '400', '800', '2000']:
-    #     print "dwi_level", dwi_lvl
-    #     crossvalidate(model2, filter_on=False, quiet=True, frequency=0.1, adc_on=False, dwi_lvl=dwi_lvl,
-    #                   print_example_vector=False, silent=True, save_reconstruction=False)
-
-    #left side top
-    # crossvalidate(model2, filter_on=True, frequency=0.1, adc_on=True, dwi_lvl='2000')
-    # result .718
-
-    #left side bottom
-    # crossvalidate(model2, adc_on=True, dwi_lvl='2000')
-    # result .711
-
-    #right side top
-    # crossvalidate(model2, filter_on=True, frequency=0.1, dwi_lvl='2000')
-    # result .6422
-
-    #right side bottom
-    #crossvalidate(model2, filter_on=True, frequency=0.1, adc_on=True)
-    # result .724
-
-    test_frequencies()
-    
-    # For examining effect of gabor frequency filtering
-    # Applies gabor filter at different frequencies on patient 0
-    # print "filtering images"
-    # frequencies = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-    # test_image = t2_normalized[0]
-    #
-    # fig, axes = plt.subplots(nrows=1, ncols=9, figsize=(10,3))
-    # for frequency, ax in zip(frequencies, axes[0:]):
-    #     filt_real, filt_imag = gabor(test_image, frequency=frequency)
-    #     image_name = 'patient{}_{}'.format(0, frequency)
-    #     ax.imshow(filt_real)
-    #     ax.axis('off')
-    #     ax.set_title(frequency, fontsize=12)
-    #     #plt.savefig('{}.png'.format(image_name))
-    #     #plt.close()
-    # plt.show()
 
 
     
