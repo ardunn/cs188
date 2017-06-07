@@ -27,12 +27,15 @@ def normalize_t2(data):
     return normalized_data
 
 def get_t2(data):
-    t2_data = []
-    for i, patient in enumerate(data):
-        if i in good_patients:
-            t2 = patient[1]
-            t2_data.append(t2)
-    return t2_data
+    return [patient[1] for i, patient in enumerate(data) if i in good_patients]
+
+def get_adc(data):
+    return [patient[2] for i, patient in enumerate(data) if i in good_patients]
+
+def get_dwi(data, weight="400"):
+    wt_dict = {'10':3, '100':4, '400':5, '800':6, '2000':7}
+    di = wt_dict[weight]
+    return [patient[di] for i, patient in enumerate(data) if i in good_patients]
 
 def get_filtered_t2(data, frequency, sigma_x=None, sigma_y=None):
     filtered_data = []
@@ -111,8 +114,8 @@ def reconstruct(mask, y_pred, pixels):
 
     return mask
 
-def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, normalized=False, filtered=False,
-             print_example_vector=False, save_reconstruction=False):
+def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, normalized=False, filter_on=False,
+             print_example_vector=False, save_reconstruction=False, adc_on=False, dwi_lvl=None):
     """
     Runs a single classifier through sample classifications.
     """
@@ -134,11 +137,19 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
     if patient_index == -1:
         patient_index = n_patients - 1
 
-    t2_filtered = get_filtered_t2(data, frequency=frequency, sigma_x=2.0, sigma_y=2.0)
-    # t2_filtered2 = get_filtered_t2(data, frequency=frequency, sigma_y=2.0, sigma_x=2.0)
-
     image_set_total = [t2]
-    image_set_total.append(t2_filtered)
+
+    if filter_on:
+        t2_filtered = get_filtered_t2(data, frequency=frequency)
+        image_set_total.append(t2_filtered)
+
+    if adc_on:
+        adc = get_adc(data)
+        image_set_total.append(adc)
+
+    if dwi_lvl is not None:
+        dwi = get_dwi(data, weight=dwi_lvl)
+        image_set_total.append(dwi)
 
     X_train = []
     y_train = []
@@ -152,7 +163,7 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
 
         else:
 
-            if filtered:
+            if len(image_set_total) > 1:
                 image_set = [imset[i] for imset in image_set_total]
                 X_train_single, y_train_single = create_multiparametric_dataset(image_set, masks[i], n, prune=prune)
             else:
@@ -163,6 +174,7 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
 
     if print_example_vector:
         ex_vec = X_train[0]
+        print "length of example vector:", len(ex_vec)
         print ex_vec
 
     # Create testing data
@@ -172,7 +184,8 @@ def runmodel(model, patient_index=-1, frequency=0.4, quiet=False, silent=False, 
 
     test_mask = masks[patient_index]
     test_t2 = t2[patient_index]
-    if filtered:
+
+    if len(image_set_total) > 1:
         image_set = [imset[patient_index] for imset in image_set_total]
         X_test, y_test = create_multiparametric_dataset(image_set, test_mask, n, prune=prune, save_pxs=True)
     else:
@@ -290,7 +303,28 @@ if __name__ == "__main__":
     #
     #         good_patients.remove(k)
 
-    crossvalidate(model2, filtered=True, quiet=False, frequency=0.1, silent=False, save_reconstruction=True)
+
+    # dwi level of 2000 worked best but didnt help
+    # for dwi_lvl in ['10', '100', '400', '800', '2000']:
+    #     print "dwi_level", dwi_lvl
+    #     crossvalidate(model2, filter_on=False, quiet=True, frequency=0.1, adc_on=False, dwi_lvl=dwi_lvl,
+    #                   print_example_vector=False, silent=True, save_reconstruction=False)
+
+    #left side top
+    # crossvalidate(model2, filter_on=True, frequency=0.1, adc_on=True, dwi_lvl='2000')
+    # result .718
+
+    #left side bottom
+    # crossvalidate(model2, adc_on=True, dwi_lvl='2000')
+    # result .711
+
+    #right side top
+    # crossvalidate(model2, filter_on=True, frequency=0.1, dwi_lvl='2000')
+    # result .6422
+
+    #right side bottom
+    crossvalidate(model2, filter_on=True, frequency=0.1, adc_on=True)
+    # result .724
 
     # For examining effect of gabor frequency filtering
     # Applies gabor filter at different frequencies on patient 0
