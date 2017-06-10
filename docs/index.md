@@ -3,8 +3,8 @@
 Magnetic Resonance Imaging is one of the most popular medical technologies for prostate cancer diagnosis. Typically, doctors look at individual images to assess the classify the cancerous and non-cancerous areas of the prostate...**but what if there was a smarter - and faster - way to diagnose**? In our project, we will use machine learning to identify the cancerous areas of a prostate. 
 
 ## Project Papers
-* [Literature Review](https://docs.google.com/document/d/1arkgSzEYloPr1IbP3LsoZUwqOfah9zB9rGagMA5fBqU/pub)
-* [Final Report](https://docs.google.com/document/d/1kvVLDX3gua4Dz9jV8kB29D6YNpihWIQo70EmGQ9bzCk/pub)
+* [Literature Review](https://github.com/ardunn/cs188/raw/master/docs/papers/Alex%20Dunn%20and%20Breanna%20Nery%20-%20Literature%20Review.pdf)
+* [Final Report](https://github.com/ardunn/cs188/raw/master/docs/papers/FinalReport.pdf)
 
 ## Updates
 * [04/14/17: Meeting Dr. Nelly Tan](041417)
