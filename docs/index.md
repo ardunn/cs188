@@ -1,19 +1,31 @@
 ## Machine Learning  + MRI = Saving Lives
 
-Magnetic Resonance Imaging is one of the most popular medical technologies for prostate cancer diagnosis. Typically, doctors look at individual images to assess the severity of prostate cancer tumors...**but what if there was a smarter - and faster - way to diagnose**? In our project, we will use machine learning to classify prostate tumors according to their severity.
+Magnetic Resonance Imaging is one of the most popular medical technologies for prostate cancer diagnosis. Typically, doctors look at individual images to assess the classify the cancerous and non-cancerous areas of the prostate...**but what if there was a smarter - and faster - way to diagnose**? In our project, we will use machine learning to identify the cancerous areas of a prostate. 
 
-Stay tuned for more details!
+## Project Papers
+* [Literature Review](https://docs.google.com/document/d/1arkgSzEYloPr1IbP3LsoZUwqOfah9zB9rGagMA5fBqU/pub)
+* [Final Report](https://docs.google.com/document/d/1kvVLDX3gua4Dz9jV8kB29D6YNpihWIQo70EmGQ9bzCk/pub)
 
 ## Updates
 * [04/14/17: Meeting Dr. Nelly Tan](041417)
 
 * [04/21/17: Meeting with Dr. Fabien Scalzo](042117)
 
-* [04/28/17: Literature review](literature_review)
+* [04/28/17: Literature Review](literature_review)
 
 * [05/05/17: Receiving The Data](050517)
 
-* [05/11/17: Attempt #1](051117)
+* [05/11/17: Creating the Training Set - Attempt #1](051117)
+
+* [05/16/17: Reviewing Our Data Set](051617)
+
+* [05/18/17: Creating the Training Set - Attempt #2](051817)
+
+* [05/24/17: Testing with Different Models](052417)
+
+* [05/25/17: Normalizing the Images](052517) 
+
+* [05/30/17: Filtering the Images](053017)
 
 
 ## Resources
