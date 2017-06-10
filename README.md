@@ -34,7 +34,7 @@ In `ensemble.py`, the main function runs our `crossvalidate` function which exec
 $ python ensemble.py <n> <yes/true/t/y/1 or no/false/f/n/0> 
 ```
 
-`n` specifies the size of the subimages.
+`n` specifies the size of the subimages. `yes/no` specifies if pruning will occur. 
 
 Currently, `ensemble.py` will run the following: 
 
