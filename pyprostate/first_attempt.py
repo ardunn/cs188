@@ -1,3 +1,8 @@
+"""
+This was our first attempt at using machine learning to classify the images. Don't pay much attention to this code, 
+the data conversion from image to feature vector is not done right and our ROC AUC scores are very low. 
+"""
+
 import scipy.io
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
